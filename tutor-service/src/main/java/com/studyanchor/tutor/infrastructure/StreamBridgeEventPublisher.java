@@ -12,14 +12,14 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Implements FR-02 AC3. Adapter: publishes MaterialAdded to {@code tutor.materials} as JSON
- * with message key = userId (docs/05-events.md). The binding maps to the topic in application.yml.
+ * Implements FR-02 AC3, FR-07 AC5. Adapter: publishes MaterialAdded to {@code tutor.materials} and
+ * UnderstandingRecorded to {@code tutor.understanding} as JSON with message key = userId (docs/05-events.md).
+ * Each binding maps to its topic in application.yml.
  */
 @Component
 class StreamBridgeEventPublisher implements EventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(StreamBridgeEventPublisher.class);
-    private static final String BINDING = "tutorMaterials-out-0";
 
     private final StreamBridge streamBridge;
 
@@ -32,9 +32,14 @@ class StreamBridgeEventPublisher implements EventPublisher {
         var message = MessageBuilder.withPayload(event)
                 .setHeader(KafkaHeaders.KEY, event.userId().getBytes(StandardCharsets.UTF_8))
                 .build();
-        if (!streamBridge.send(BINDING, message)) {
+        String binding = switch (event.eventType()) {
+            case "MaterialAdded" -> "tutorMaterials-out-0";
+            case "UnderstandingRecorded" -> "tutorUnderstanding-out-0";
+            default -> throw new IllegalArgumentException("No topic for " + event.eventType());
+        };
+        if (!streamBridge.send(binding, message)) {
             throw new IllegalStateException("Could not publish " + event.eventType());
         }
-        log.info("Published {} for user {} to {}", event.eventType(), event.userId(), BINDING);
+        log.info("Published {} for user {} to {}", event.eventType(), event.userId(), binding);
     }
 }

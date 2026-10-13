@@ -148,4 +148,16 @@ class CourseTest {
 
         assertThat(course.topics()).singleElement().satisfies(t -> assertThat(t.materialCount()).isEqualTo(2));
     }
+
+    @Test
+    void FR07_latestUnderstandingLevelWins() {
+        UUID kafka = course.addTopic("Kafka", NOW).id();
+        assertThat(course.topics().getFirst().understandingLevel()).as("none until recorded").isNull();
+
+        course.recordUnderstanding(kafka, 2, NOW.plusSeconds(60));
+        course.recordUnderstanding(kafka, 4, NOW.plusSeconds(120));
+        course.recordUnderstanding(kafka, 1, NOW.plusSeconds(90));
+
+        assertThat(course.topics()).singleElement().satisfies(t -> assertThat(t.understandingLevel()).isEqualTo(4));
+    }
 }

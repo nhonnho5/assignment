@@ -5,6 +5,7 @@ import com.studyanchor.tutor.domain.TopicReferenceRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /** Implements FR-01 AC10. Adapter: fulfils the domain repository interface using Spring Data JPA and H2. */
@@ -30,6 +31,11 @@ class JpaTopicReferenceRepositoryAdapter implements TopicReferenceRepository {
     @Override
     public boolean existsByIdAndUserId(UUID topicId, String userId) {
         return jpa.existsByTopicIdAndUserId(topicId, userId);
+    }
+
+    @Override
+    public Optional<TopicReference> findByIdAndUserId(UUID topicId, String userId) {
+        return jpa.findByTopicIdAndUserId(topicId, userId);
     }
 
     @Override

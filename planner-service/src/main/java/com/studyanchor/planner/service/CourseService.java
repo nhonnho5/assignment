@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -100,6 +101,15 @@ public class CourseService {
     public void onMaterialAdded(UUID topicId, UUID materialId) {
         repository.findByTopicId(topicId).ifPresent(course -> {
             course.recordMaterial(topicId, materialId);
+            repository.save(course);
+        });
+    }
+
+    /** FR-07 AC14: UnderstandingRecorded from Tutor. A topic that is gone (or never existed here) is ignored. */
+    @Transactional
+    public void onUnderstandingRecorded(UUID topicId, int level, Instant recordedAt) {
+        repository.findByTopicId(topicId).ifPresent(course -> {
+            course.recordUnderstanding(topicId, level, recordedAt);
             repository.save(course);
         });
     }

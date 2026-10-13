@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: tutor-service
+  config:
+    # FR-07: LLM_API_KEY (and optional LLM_MODEL) from the repo's .env, whether started from the repo or the module
+    import: optional:file:.env[.properties],optional:file:../.env[.properties]
   datasource:
     url: jdbc:h2:mem:tutor;DB_CLOSE_DELAY=-1
   jpa:
@@ -34,3 +37,11 @@ spring:
         # FR-02 AC3: StreamBridge output for MaterialAdded
         tutorMaterials-out-0:
           destination: tutor.materials
+        # FR-07 AC5: StreamBridge output for UnderstandingRecorded
+        tutorUnderstanding-out-0:
+          destination: tutor.understanding
+
+# FR-07: Socratic tutor agent (docs/09-conventions.md, LLM). An empty key keeps the service up; tutoring → 503.
+llm:
+  api-key: ${LLM_API_KEY:}
+  model: ${LLM_MODEL:gemini-3.5-flash-lite}

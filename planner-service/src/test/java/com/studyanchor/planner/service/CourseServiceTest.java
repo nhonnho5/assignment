@@ -120,4 +120,16 @@ class CourseServiceTest {
         assertThat(service.get("alice", id).topics()).singleElement()
                 .satisfies(t -> assertThat(t.materialCount()).isEqualTo(1));
     }
+
+    @Test
+    void FR07_understandingForUnknownTopicIgnored() {
+        UUID id = service.create("alice", "CSCI318", "SE").id();
+        UUID topicId = service.addTopic("alice", id, "Kafka").id();
+
+        service.onUnderstandingRecorded(topicId, 3, Instant.parse("2026-10-14T03:00:00Z"));
+        service.onUnderstandingRecorded(UUID.randomUUID(), 5, Instant.parse("2026-10-14T03:00:00Z"));
+
+        assertThat(service.get("alice", id).topics()).singleElement()
+                .satisfies(t -> assertThat(t.understandingLevel()).isEqualTo(3));
+    }
 }

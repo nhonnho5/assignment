@@ -7,7 +7,7 @@ Single source of truth for where the build is. Claude ticks items when a step is
 - [x] Decide LLM provider — Google Gemini
 - [x] Confirm `spring-cloud-stream-binder-kafka-streams` with coordinator — approved 2026-10-13
 - [x] Grill session 1: six open questions resolved and written into `02-requirements.md` / `09-conventions.md`
-- [ ] Get a Gemini API key (aistudio.google.com) and put it in `.env` as `LLM_API_KEY` (needed by step 8)
+- [x] Get a Gemini API key (aistudio.google.com) and put it in `.env` as `LLM_API_KEY` (needed by step 8) — present 2026-10-14 (checked without reading the value); first real use in step 8
 
 ## Build order (from CLAUDE.md)
 - [x] 1. Skeleton — parent pom, 4 modules on 8081–8084, docker-compose Kafka
@@ -17,9 +17,18 @@ Single source of truth for where the build is. Claude ticks items when a step is
 - [x] 5. FR-01, FR-03, FR-11 planner + `TopicCreated` → Tutor
 - [x] 6. FR-02 materials + `MaterialAdded` → Planner
 - [x] 7. FR-06, FR-12 distractions, spike stream, reminders
-- [ ] 8. FR-07 Socratic tutor agent
+- [x] 8. FR-07 Socratic tutor agent
 - [ ] 9. FR-04 planning agent — **also FR-12 AC3/AC4** (time block completed on `FocusSessionEnded`, missed-block reminders via `@Scheduled`), moved here because time blocks only exist from FR-04
 - [ ] 10. Postman collection + README
+
+## Step 8 (FR-07) — built and verified with curl against real Gemini 2026-10-14
+Decisions are in `02-requirements.md` FR-07 AC6–14; LangChain4j 1.22.0 and the model setting in `09-conventions.md`.
+
+- **tutor-service:** `TutoringSession` (aggregate root: transcript, attempts, `ACTIVE → CHECKING → ENDED`, all tool rules), `Message` (value object; a student message can be marked as an attempt), `SessionStatus`, `UnderstandingRecorded` → `tutor.understanding`, `MaterialSearch` (domain service, word-overlap paragraphs), ports `TutorAgent` and `TutoringSessionRepository`, `ConflictException` (409), `TutorUnavailableException` (503). `TutoringService` (LLM failure rolls the request back). `TutoringTools` (`searchMaterial`, `recordAttempt`, `revealSolution` → separate `Solver` LLM call, `recordUnderstanding`; refusals go back to the LLM as "REFUSED: …"), `GeminiTutorAgent` (rebuilds the chat from the transcript each turn, always includes the 3 closest material paragraphs). `TutoringController`: `POST /tutoring-sessions`, `POST /{id}/messages`, `POST /{id}/end`, `GET /{id}`. `TopicDeleted` also removes sessions. `.env` is loaded through `spring.config.import`.
+- **planner-service:** `Topic` keeps the latest understanding level (by `occurredAt`); `TutorUnderstandingConsumer` on `tutor.understanding`; `GET /courses/{id}` shows `understandingLevel`.
+- **Tests:** `TutoringSessionTest` (12), `MaterialSearchTest` (4), `TutoringToolsTest` (5, no LLM), `TutoringServiceTest` (5), `TopicCatalogServiceTest` +1, `CourseTest` +1, `CourseServiceTest` +1.
+- **Found in the curl test and fixed:** (1) Gemini 3 needs its "thought signature" sent back after a tool call; (2) the LLM graded straight after `/end` without asking the check question; the domain now refuses that (`FR07_understandingOnlyAfterStudentAnsweredCheckQuestion`); (3) the LLM did not always call `searchMaterial`, so the closest paragraphs are now always in its instructions.
+- **Model:** default is now `gemini-3.5-flash-lite` (verified); `gemini-3.8-flash` allowed only 5 requests/minute on the free tier and was overloaded during the test.
 
 ## Step 7 (FR-06, FR-12) — built and verified with curl 2026-10-14
 Decisions are in `02-requirements.md` FR-06 AC5–8 and FR-12 AC8–11; `05-events.md` `DistractionSpikeDetected`.

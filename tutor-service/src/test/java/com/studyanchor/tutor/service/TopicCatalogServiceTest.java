@@ -3,13 +3,16 @@ package com.studyanchor.tutor.service;
 import com.studyanchor.tutor.domain.Material;
 import com.studyanchor.tutor.domain.TopicReference;
 import com.studyanchor.tutor.domain.TopicReferenceRepository;
+import com.studyanchor.tutor.domain.TutoringSession;
 import com.studyanchor.tutor.service.MaterialServiceTest.InMemoryMaterials;
+import com.studyanchor.tutor.service.TutoringServiceTest.InMemorySessions;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,7 +38,12 @@ class TopicCatalogServiceTest {
 
         @Override
         public boolean existsByIdAndUserId(UUID topicId, String userId) {
-            return existsById(topicId) && byId.get(topicId).userId().equals(userId);
+            return findByIdAndUserId(topicId, userId).isPresent();
+        }
+
+        @Override
+        public Optional<TopicReference> findByIdAndUserId(UUID topicId, String userId) {
+            return Optional.ofNullable(byId.get(topicId)).filter(t -> t.userId().equals(userId));
         }
 
         @Override
@@ -51,7 +59,8 @@ class TopicCatalogServiceTest {
 
     private final InMemoryTopics topics = new InMemoryTopics();
     private final InMemoryMaterials materials = new InMemoryMaterials();
-    private final TopicCatalogService service = new TopicCatalogService(topics, materials);
+    private final InMemorySessions sessions = new InMemorySessions();
+    private final TopicCatalogService service = new TopicCatalogService(topics, materials, sessions);
 
     private static TopicReference kafka(UUID id) {
         return new TopicReference(id, "alice", UUID.randomUUID(), "CSCI318", "Kafka");
@@ -94,5 +103,18 @@ class TopicCatalogServiceTest {
         service.onTopicDeleted(id);
 
         assertThat(materials.byId.values()).singleElement().satisfies(m -> assertThat(m.topicId()).isEqualTo(other));
+    }
+
+    @Test
+    void FR07_topicDeletedRemovesItsTutoringSessions() {
+        UUID id = UUID.randomUUID();
+        UUID other = UUID.randomUUID();
+        Instant now = Instant.parse("2026-10-14T03:00:00Z");
+        sessions.save(TutoringSession.start("alice", id, "What is a partition?", now));
+        sessions.save(TutoringSession.start("alice", other, "What is a stream?", now));
+
+        service.onTopicDeleted(id);
+
+        assertThat(sessions.byId.values()).singleElement().satisfies(s -> assertThat(s.topicId()).isEqualTo(other));
     }
 }

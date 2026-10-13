@@ -9,13 +9,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
 /**
- * Implements FR-01, FR-02 AC8. Entity inside the {@link Course} aggregate: a unit of content that can be studied.
- * It remembers the IDs of the materials Tutor reported for it, so a repeated MaterialAdded is counted once.
+ * Implements FR-01, FR-02 AC8, FR-07 AC14. Entity inside the {@link Course} aggregate: a unit of content that can
+ * be studied.
+ * It remembers the IDs of the materials Tutor reported for it, so a repeated MaterialAdded is counted once, and the
+ * latest understanding level Tutor recorded for it.
  */
 @Entity
 @Table(name = "topic")
@@ -32,6 +35,10 @@ public class Topic {
     @Column(name = "material_id")
     private Set<UUID> materialIds = new HashSet<>();
 
+    private Integer understandingLevel;
+
+    private Instant understandingRecordedAt;
+
     /** For JPA only. */
     protected Topic() {
     }
@@ -44,6 +51,19 @@ public class Topic {
 
     void recordMaterial(UUID materialId) {
         materialIds.add(materialId);
+    }
+
+    /** FR-07 AC14: the event with the latest occurredAt wins, so an older one arriving late changes nothing. */
+    void recordUnderstanding(int level, Instant recordedAt) {
+        if (understandingRecordedAt == null || recordedAt.isAfter(understandingRecordedAt)) {
+            understandingLevel = level;
+            understandingRecordedAt = recordedAt;
+        }
+    }
+
+    /** FR-07 AC14: null until Tutor recorded a level. */
+    public Integer understandingLevel() {
+        return understandingLevel;
     }
 
     public int materialCount() {

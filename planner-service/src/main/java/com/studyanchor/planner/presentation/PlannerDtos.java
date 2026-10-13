@@ -49,11 +49,14 @@ final class PlannerDtos {
 
     // ---- responses ----
 
-    /** {@code materialCount}: materials Tutor reported for the topic (FR-02 AC8). */
-    record TopicResponse(UUID id, String name, int materialCount) {
+    /**
+     * {@code materialCount}: materials Tutor reported for the topic (FR-02 AC8); {@code understandingLevel}: the
+     * latest level Tutor recorded, null until then (FR-07 AC14).
+     */
+    record TopicResponse(UUID id, String name, int materialCount, Integer understandingLevel) {
 
         static TopicResponse from(Topic t) {
-            return new TopicResponse(t.id(), t.name(), t.materialCount());
+            return new TopicResponse(t.id(), t.name(), t.materialCount(), t.understandingLevel());
         }
     }
 

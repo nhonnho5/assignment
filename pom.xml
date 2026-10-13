@@ -31,6 +31,8 @@
         <spring-cloud.version>2025.0.3</spring-cloud.version>
         <!-- FR-02: PDF text extraction in Tutor (approved by coordinator 2026-10-14) -->
         <pdfbox.version>3.0.8</pdfbox.version>
+        <!-- FR-07, FR-04: AI agents with Google Gemini (docs/09-conventions.md) -->
+        <langchain4j.version>1.22.0</langchain4j.version>
     </properties>
 
     <dependencyManagement>
@@ -39,6 +41,13 @@
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
                 <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-bom</artifactId>
+                <version>${langchain4j.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

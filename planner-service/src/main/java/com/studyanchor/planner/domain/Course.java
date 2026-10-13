@@ -116,6 +116,11 @@ public class Course {
         topic(topicId).recordMaterial(materialId);
     }
 
+    /** FR-07 AC14: Tutor recorded an understanding level for one of this course's topics; the latest one wins. */
+    public void recordUnderstanding(UUID topicId, int level, Instant recordedAt) {
+        topic(topicId).recordUnderstanding(level, recordedAt);
+    }
+
     public void deleteDeadline(UUID deadlineId) {
         if (!deadlines.removeIf(d -> d.id().equals(deadlineId))) {
             throw new NotFoundException("Deadline " + deadlineId + " not found");

@@ -17,6 +17,7 @@ Only the dependencies above, plus `spring-boot-starter-test`. **Any other depend
 | Lombok | ✗ Not used — Java records replace it |
 | `spring-boot-starter-validation` | ✗ Not used — invariants are enforced in domain code |
 | `langchain4j-google-ai-gemini` | ✓ LLM provider module, part of LangChain4j *(decided 2026-10-13)* |
+| `langchain4j` (core: `AiServices`, `@Tool`) | ✓ LangChain4j itself, 1.22.0 via `langchain4j-bom`. The Spring Boot starter is not used (still a beta); Tutor wires the model in a `@Configuration` *(decided 2026-10-14)* |
 | `org.apache.pdfbox:pdfbox` | ✓ Approved by coordinator *(2026-10-14)* — Tutor extracts the text of uploaded PDF materials (FR-02 AC4) |
 
 ## Repository layout
@@ -68,6 +69,10 @@ Dependencies point inward: `presentation → service → domain ← infrastructu
 
 ## LLM
 - API key from environment variable `LLM_API_KEY`; never commit keys.
+- Model from `LLM_MODEL`, default `gemini-3.5-flash-lite` (one of Google's two recommendations for new projects, Oct 2026). `gemini-3.8-flash` is stronger but its free tier was too small for an agent (see below); set `LLM_MODEL=gemini-3.8-flash` to use it. *(decided 2026-10-14; default changed from 3.8-flash after the curl test)*
+- Gemini 3.x signs every tool call ("thought signature") and rejects the next request unless it is sent back, so the chat model is built with `returnThinking(true)` and `sendThinking(true)`. *(found and fixed 2026-10-14)*
+- One tutor turn costs 2–4 LLM requests (tool calls + reply). The free tier of `gemini-3.8-flash` allows only 5 requests per minute (seen 2026-10-14); `gemini-3.5-flash-lite` handled the full curl test.
+- Each agent tool call is logged at INFO (`Tool <name> in session <id> → <result>`), so a demo can show which tools ran and which were refused.
 - Business rules the agent must respect (e.g. time-block limits, answer-reveal rule) are **enforced in code inside the tools**, not only in prompts.
 
 ## Traceability

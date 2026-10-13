@@ -55,6 +55,8 @@ Published when a topic is deleted, or once per topic when its course is deleted.
 | title | String |
 
 ### UnderstandingRecorded — FR-07
+Published once per tutoring session, when the tutor records the level after the check-understanding question. Planner keeps the level with the latest `occurredAt` per topic. *(decided 2026-10-14)*
+
 | Field | Type |
 |---|---|
 | tutoringSessionId | UUID |
