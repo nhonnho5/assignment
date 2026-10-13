@@ -18,10 +18,10 @@ Single source of truth for where the build is. Claude ticks items when a step is
 - [x] 6. FR-02 materials + `MaterialAdded` → Planner
 - [x] 7. FR-06, FR-12 distractions, spike stream, reminders
 - [x] 8. FR-07 Socratic tutor agent
-- [ ] 9. FR-04 planning agent — **also FR-12 AC3/AC4** (time block completed on `FocusSessionEnded`, missed-block reminders via `@Scheduled`), moved here because time blocks only exist from FR-04
+- [x] 9. FR-04 planning agent — **also FR-12 AC3/AC4** (time block completed on `FocusSessionEnded`, missed-block reminders via `@Scheduled`), moved here because time blocks only exist from FR-04
 - [ ] 10. Postman collection + README
 
-## Step 9 (FR-04, FR-12 AC3/AC4) — built and verified with curl against real Gemini 2026-10-14
+## Step 9 (FR-04, FR-12 AC3/AC4) — built and verified with curl against real Gemini 2026-10-14 (live missed-block test still to do, see Reminders)
 Decisions are in `02-requirements.md` FR-04 AC8–15 and FR-12 AC12.
 
 - **planner-service domain:** `StudyPlan` (aggregate root, one per student per week; every block rule, the shortfall rule, block status), `TimeBlock` (entity: Sydney date/times, topic name + course code copy, rationale, `PLANNED → STARTED → COMPLETED` or `PLANNED → MISSED`), `TopicPriority` (domain service: (6 − level) × Σ weight ÷ days), ports `PlanningAgent` and `StudyPlanRepository`, `AgentUnavailableException` (503). `Reminder` has a new kind `MISSED_BLOCK` (`missed:<blockId>`, once per block); `WeeklyAvailability.covers`.
@@ -60,6 +60,7 @@ Decisions are in `02-requirements.md` FR-02 AC4–8; PDFBox approved in `09-conv
 None right now. Run `/grill-me` before each slice to catch new ones.
 
 ## Reminders for the user
+- [ ] **At the start of step 10: run the live missed-block test (FR-12 AC4).** Closed step 9 without it (the user decided 2026-10-14; Planner was restarted mid-test). It is covered by unit tests (`FR12_blockIsMarkedMissedOnceAfterItEnds`, `FR12_missedBlockCreatesOneReminderQuotingAGoal`, `FR12_startedBlockGetsNoMissedReminder`). To test: add a 25-minute availability slot today that starts a few minutes from now, plan the current week, start no focus session, and about a minute after the block ends check `GET /plans/{weekStart}` (`"status":"MISSED"`) and `GET /reminders` (one `MISSED_BLOCK` reminder; still one a minute later).
 - [x] Working alone instead of a group of 3: approved by the professor (confirmed by the user 2026-10-14).
 - [ ] **After step 10 (code done):** go back to the subject spec (`docs/CSCI318 Project Specification Spring 2026.pdf`, local only, git-ignored) and check every deliverable against it. Known gaps so far:
   - UML diagrams: use cases + activity diagram per FR, domain model, architecture, database design (AI-assisted artefacts in the repo, origin labelled).

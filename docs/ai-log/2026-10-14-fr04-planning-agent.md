@@ -22,3 +22,4 @@
 | One `addBlocks(list)` tool instead of one call per block, to keep the number of LLM requests low on the free tier | Accepted (part of the plan) | *(write in your own words)* |
 | Read Focus statistics with Spring's `RestClient` (part of Spring Web, no new dependency) | Accepted (part of the plan) | *(write in your own words)* |
 | Curl test: the LLM reported "not enough time" and left a free slot empty, even after a clearer prompt; enforce in the domain that the shortfall is refused while the plan is empty and a later slot is still free (new test first) | Accepted (found in testing and fixed before review) | *(write in your own words)* |
+| Finish the live missed-block test (wait ~30 min for a real block to end) before ticking step 9 | Modified — I closed step 9 with that live test moved to the start of step 10 (it is covered by unit tests; a Planner restart had reset the first attempt) | *(write in your own words)* |
