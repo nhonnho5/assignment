@@ -44,7 +44,7 @@
 1. A student can add material (title, text content up to 50,000 characters) to a topic.
 2. Material for a topic unknown to the Tutor service is rejected (Tutor knows topics via `TopicCreated`).
 3. Adding material publishes `MaterialAdded`.
-4. Material is added by uploading a file: `POST /topics/{topicId}/materials` as multipart form data with `file` (a `.txt` or `.md` file, UTF-8) and an optional `title` (default: the file name without its extension). Any other file type → 400. PDF upload is postponed until the coordinator approves a PDF library. *(decided 2026-10-14)*
+4. Material is added by uploading a file: `POST /topics/{topicId}/materials` as multipart form data with `file` (a `.txt` or `.md` file in UTF-8, or a `.pdf`) and an optional `title` (default: the file name without its extension). Any other file type → 400. The text of a PDF is extracted on upload; a PDF that cannot be read (broken, password-protected) or has no text (e.g. scanned pages) → 400. The 50,000-character limit applies to the extracted text. *(decided 2026-10-14; PDF approved by the coordinator 2026-10-14)*
 5. Title 1–100 characters and content 1–50,000 characters, both trimmed; blank or too long → 400. A topic unknown to Tutor or owned by another student (`X-User-Id`) → 404. *(decided 2026-10-14)*
 6. `GET /topics/{topicId}/materials` lists a topic's materials (id, title, characters, added at; no content); `GET /materials/{id}` returns one material as JSON with its full text; another student's material → 404. There is no edit or delete. *(decided 2026-10-14)*
 7. When Tutor receives `TopicDeleted`, it also removes that topic's materials (no event is published). *(decided 2026-10-14)*

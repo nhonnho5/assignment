@@ -2,7 +2,7 @@
 
 **Tool:** Claude Code (cloud session)
 **Phase:** Grill session for build step 6 (FR-02, `MaterialAdded` → Planner)
-**Artefacts produced:** edits to `02-requirements.md` (FR-02 AC4–8), `09-conventions.md` (PDF library to ask the coordinator), `01-domain.md` (material ingestion)
+**Artefacts produced:** edits to `02-requirements.md` (FR-02 AC4–8), `09-conventions.md` (PDFBox approved), `01-domain.md` (material ingestion)
 
 ## What the AI proposed and what I decided
 
@@ -14,3 +14,5 @@
 | List + read materials, no edit or delete; `TopicDeleted` removes the topic's materials | Accepted | *(write in your own words)* |
 | `GET /materials/{id}` returns JSON with the full text (not a raw file download) | Accepted | *(write in your own words)* |
 | Planner keeps material IDs per topic from `MaterialAdded` and shows `materialCount` | Accepted | *(write in your own words)* |
+| Coordinator approved PDF: use Apache PDFBox directly (not LangChain4j's PDFBox parser) to extract the text | Accepted | *(write in your own words)* |
+| A PDF that can't be read or has no text (scanned) → 400 with a clear message | Accepted | *(write in your own words)* |

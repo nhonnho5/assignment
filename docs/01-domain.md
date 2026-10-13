@@ -50,7 +50,7 @@ University study demands strong executive function: deciding what to study, when
 
 - **No frontend.** All interaction is via REST APIs, demonstrated with a Postman collection.
 - **No authentication.** The current user is identified by the `X-User-Id` request header.
-- **Material ingestion** is by REST upload of a plain text / Markdown file (PDF only if the coordinator approves a PDF library, see `09-conventions.md`).
+- **Material ingestion** is by REST upload of a plain text, Markdown or PDF file; the text of a PDF is extracted on upload.
   *Rejected alternative:* scraping the university Moodle site — requires storing the student's university password, likely breaches IT policy, and breaks whenever the site changes. A production version would use Moodle's official Web Services API with a university-issued token.
 - **Website blocking is out of scope** (it needs a browser extension or OS-level control). It is modelled instead as an *allowed-sites policy* on each focus session plus distraction logging, so a future extension can report off-policy site visits as events.
 - **Reminders** are stored and retrieved via REST (no push notifications).
