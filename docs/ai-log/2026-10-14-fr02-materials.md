@@ -22,3 +22,9 @@
 | AI proposal | Decision | My rationale |
 |---|---|---|
 | Upload size limit 20 MB (Spring's default is 1 MB, too small for many lecture PDFs); the 50,000-character limit is checked on the extracted text | Accepted | *(write in your own words)* |
+
+## Adopting the cloud-session work (local session, 2026-10-14)
+
+| AI proposal | Decision | My rationale |
+|---|---|---|
+| Review the FR-02 slice built in a cloud session (`fr02.bundle`) instead of rebuilding it; verified locally with 45 passing tests and curl (upload .md/.pdf, 400/404 cases, `materialCount` in Planner, `TopicDeleted` removes materials) | Accepted | *(write in your own words)* |
