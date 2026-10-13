@@ -17,6 +17,7 @@ Only the dependencies above, plus `spring-boot-starter-test`. **Any other depend
 | Lombok | ✗ Not used — Java records replace it |
 | `spring-boot-starter-validation` | ✗ Not used — invariants are enforced in domain code |
 | `langchain4j-google-ai-gemini` | ✓ LLM provider module, part of LangChain4j *(decided 2026-10-13)* |
+| PDF text extraction (Apache PDFBox / `langchain4j-document-parser-apache-pdfbox`) | ? To ask the coordinator — wanted for PDF material upload (FR-02 AC4). Until approved, materials are `.txt` / `.md` files *(2026-10-14)* |
 
 ## Repository layout
 ```
