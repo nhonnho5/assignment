@@ -15,6 +15,9 @@ target/
 .env.*
 !.env.example
 
+# Subject's project specification (UOW document) — kept locally, not committed
+docs/CSCI318 Project Specification*.pdf
+
 # Personal Claude Code config
 CLAUDE.local.md
 .claude/settings.local.json

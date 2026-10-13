@@ -23,3 +23,12 @@ Single source of truth for where the build is. Claude ticks items when a step is
 
 ## Open questions
 None right now. Run `/grill-me` before each slice to catch new ones.
+
+## Reminders for the user
+- [x] Working alone instead of a group of 3: approved by the professor (confirmed by the user 2026-10-14).
+- [ ] **After step 10 (code done):** go back to the subject spec (`docs/CSCI318 Project Specification Spring 2026.pdf`, local only, git-ignored) and check every deliverable against it. Known gaps so far:
+  - UML diagrams: use cases + activity diagram per FR, domain model, architecture, database design (AI-assisted artefacts in the repo, origin labelled).
+  - README sample inputs.
+  - LangChain4j dependency (comes with step 8).
+  - Fill in the "My rationale" column in `docs/ai-log/`. The report itself must be written by the user, not by AI.
+- [ ] **After step 5 is committed:** remind the user to set up a remote and push (added 2026-10-14). The repo has no remote yet. The user creates a private GitHub/GitLab repo and sends the URL; then either Claude adds `origin` and pushes (after the user approves changing the "never `git push`" rule in `CLAUDE.md`), or the user runs `git remote add origin <url>` and `git push -u origin main`.
