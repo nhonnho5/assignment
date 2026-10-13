@@ -13,7 +13,7 @@
 
 ## Planner context
 - **Owns:** Course, Topic, Deadline, Availability, StudyPlan / TimeBlock, Goal, ValueStatement, Reminder.
-- **Publishes:** `TopicCreated`.
+- **Publishes:** `TopicCreated`, `TopicDeleted`.
 - **Consumes:** `MaterialAdded` (to know which topics have material), `UnderstandingRecorded` (to prioritise topics), `FocusSessionEnded` (to mark time blocks completed), `DistractionSpikeDetected` (to create reminders).
 - **Calls (REST):** focus-service `GET /progress/{userId}` — used by the planning agent's `getFocusStats` tool.
 - **Agent:** Planning agent (FR-04).
@@ -22,7 +22,7 @@
 ## Tutor context
 - **Owns:** Material, TutoringSession (with Attempts and messages), local TopicReference (read model).
 - **Publishes:** `MaterialAdded`, `UnderstandingRecorded`.
-- **Consumes:** `TopicCreated` (to build its local topic read model).
+- **Consumes:** `TopicCreated`, `TopicDeleted` (to build its local topic read model). The read model is rebuilt from the start of `planner.topics` every time Tutor starts, because its H2 database is in-memory. *(decided 2026-10-14)*
 - **Agent:** Socratic tutor agent (FR-07).
 - **Note:** Tutor keeps its own copy of topic names instead of calling Planner, so tutoring keeps working if Planner is down.
 
@@ -40,7 +40,7 @@
 ## Context map
 
 ```
-           TopicCreated
+       TopicCreated, TopicDeleted
  Planner ───────────────────▶ Tutor
     ▲  ◀─────────────────────  │
     │   MaterialAdded,         │

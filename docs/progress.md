@@ -21,6 +21,23 @@ Single source of truth for where the build is. Claude ticks items when a step is
 - [ ] 9. FR-04 planning agent
 - [ ] 10. Postman collection + README
 
+## Next step plan — step 5 (approved 2026-10-14, not started)
+Grill done; decisions are in `02-requirements.md` (FR-01 AC5–10, FR-03 AC4–5, FR-11 AC3–6) and `05-events.md` (`TopicDeleted`). Build exactly this:
+
+**planner-service**
+- domain: `Course` (aggregate root; holds `Topic` and `Deadline` entities; registers `TopicCreated`/`TopicDeleted`), `CourseCode`, `Weight` (value objects), `WeeklyAvailability` (aggregate root, one per user) with `AvailabilitySlot` (entity), `Goal`, `ValueStatement` (aggregate roots), `DomainEvent`, `EventPublisher`, `TopicCreated`, `TopicDeleted`, `StudyCalendar` (Sydney zone, Sydney local → instant), `DomainException`/`NotFoundException`/`ConflictException`, repository interfaces for Course, WeeklyAvailability, Goal, ValueStatement.
+- service: `CourseService` (duplicate code per user → 409; others' course → 404; save then publish), `AvailabilityService`, `GoalService`, `ValueStatementService`.
+- infrastructure: JPA adapters + Spring Data repos (EAGER `Set`s, `open-in-view: false`), `StreamBridgeEventPublisher` (binding `plannerTopics-out-0` → `planner.topics`, key = userId), `TimeConfig` (`Clock.tickMillis(UTC)`).
+- presentation: `CourseController`, `AvailabilityController`, `GoalController`, `ValueStatementController`, `PlannerDtos`, `ApiExceptionHandler`.
+- endpoints: `POST/GET /courses`, `GET/DELETE /courses/{id}`, `POST /courses/{id}/topics`, `DELETE /courses/{id}/topics/{topicId}`, `POST /courses/{id}/deadlines`, `DELETE /courses/{id}/deadlines/{deadlineId}`, `POST /availability/slots`, `GET /availability`, `DELETE /availability/slots/{id}`, `POST/GET /goals`, `POST /goals/{id}/achieve`, `DELETE /goals/{id}`, `POST/GET /values`, `DELETE /values/{id}`.
+
+**tutor-service**
+- domain `TopicReference` (read model: topicId, userId, courseId, courseCode, topicName) + repository; service `TopicCatalogService` (idempotent: repeated `TopicCreated` → no duplicate, unknown `TopicDeleted` → ignored); infrastructure `Consumer` bean `plannerTopics` on `planner.topics` (group `tutor-service`, `resetOffsets: true`, `startOffset: earliest`, logs each event) + JPA adapter; presentation `GET /topics` (by `X-User-Id`).
+
+**Tests first:** `CourseTest` (FR01_courseCodeIsTrimmedAndUpperCased, FR01_addingTopicRegistersTopicCreated, FR01_duplicateTopicNameIsConflict, FR01_deadlineInPastIsRejected, FR01_deadlineWeightMustBe1To100, FR01_deadlineTopicsMustBelongToCourse, FR01_totalWeightCannotExceed100, FR01_cannotDeleteTopicUsedByDeadline, FR01_deletingTopicRegistersTopicDeleted, FR01_deletingCourseRegistersTopicDeletedForEachTopic); `WeeklyAvailabilityTest` (FR03_slotMustBeAtLeast25Minutes, FR03_endMustBeAfterStart, FR03_timesMustBeWholeMinutes, FR03_overlappingSlotIsConflict, FR03_touchingSlotsAreAllowed, FR03_sameTimeOnOtherDayIsAllowed, FR03_removingUnknownSlotIsNotFound); `GoalTest`/`ValueStatementTest` (FR11_goalNeedsTitleAndWhy, FR11_targetDateCannotBeBeforeToday, FR11_achievingTwiceIsConflict, FR11_valueStatementMax280Characters); service tests with in-memory fakes (FR01_duplicateCourseCodeIsConflict, FR01_otherStudentsCourseIsNotFound, FR01_eventsPublishedOnlyAfterSave; Tutor FR01_topicCreatedStoredOnce, FR01_topicDeletedRemovesTopic).
+
+**Verify:** Kafka + Planner + Tutor; create course/topics/deadline via curl; Tutor log line + `GET /topics` on 8082; delete a topic → gone from Tutor.
+
 ## Open questions
 None right now. Run `/grill-me` before each slice to catch new ones.
 

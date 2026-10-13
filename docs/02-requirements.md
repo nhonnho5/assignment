@@ -30,6 +30,12 @@
 2. A student can create a deadline with title, due date-time, weight (1–100 %) and one or more topic IDs from the same course.
 3. A deadline with a due date in the past is rejected.
 4. Creating a topic publishes `TopicCreated`.
+5. A Course is one aggregate that holds its Topics and Deadlines (URLs `/courses/{id}/topics`, `/courses/{id}/deadlines`). Courses belong to the student in `X-User-Id`; another student's course → 404. *(decided 2026-10-14)*
+6. Text limits (trimmed): course code 1–20 characters, upper-cased (`csci318` = `CSCI318`); course name, topic name and deadline title 1–100. The same course code twice for one student → 409. The same topic name twice in a course (case-insensitive) → 409. *(decided 2026-10-14)*
+7. A deadline needs at least one topic ID; a topic ID that is not in that course → 400. Weight is a whole number 1–100. The total weight of a course's deadlines may not exceed 100 % → 409. *(decided 2026-10-14)*
+8. The due date-time is sent as Australia/Sydney local time (`"dueAt": "2026-10-30T23:59"`), stored as UTC and shown back in Sydney time. A due date-time at or before the current instant is "in the past" → 400. *(decided 2026-10-14)*
+9. Courses, topics and deadlines can be listed, read and deleted; there is no edit. Deleting a topic publishes `TopicDeleted`. Deleting a topic that a deadline still uses → 409 (delete the deadline first). Deleting a course deletes its topics and deadlines and publishes `TopicDeleted` for each topic. *(decided 2026-10-14)*
+10. Tutor keeps a copy of each topic (id, name, course code, owner) built from `TopicCreated` / `TopicDeleted`; `GET /topics` on the Tutor lists the student's known topics. *(decided 2026-10-14)*
 
 ## FR-02 — Add study material to a topic
 **Story:** As a student, I want to add my lecture notes or readings to a topic, so the AI tutor can ground its help in my actual course content.
@@ -46,6 +52,8 @@
 1. A student can define availability slots (day of week, start time, end time).
 2. Overlapping slots on the same day are rejected.
 3. A slot must be at least 25 minutes long.
+4. Slots are added one at a time (`POST /availability/slots`), removed by ID (`DELETE /availability/slots/{id}`) and listed with `GET /availability`. Overlap with an existing slot → 409; invalid times or a slot shorter than 25 minutes → 400. Removing an unknown slot → 404. *(decided 2026-10-14)*
+5. Times are `"HH:mm"` Australia/Sydney wall-clock times in whole minutes. The end must be after the start on the same day (no slot crosses midnight). Exactly 25 minutes is allowed. Touching slots (09:00–10:00 and 10:00–11:00) do not overlap. *(decided 2026-10-14)*
 
 ## FR-04 — AI-generated weekly study plan (Agentic AI)
 **Story:** As a student, I want the system to build my week's study time blocks for me, so I don't get stuck deciding what to study.
@@ -138,6 +146,10 @@
 **Acceptance criteria**
 1. A student can create goals (title, "why" statement, optional target date) and mark them achieved.
 2. A student can create value statements (short text, max 280 characters).
+3. Goal title 1–100 characters and "why" statement 1–500 characters, both required (trimmed). The optional target date is a date that may not be before today in Australia/Sydney → 400. *(decided 2026-10-14)*
+4. Marking a goal achieved records when; marking it again → 409. There is no "un-achieve". *(decided 2026-10-14)*
+5. Value statement text is 1–280 characters after trimming. *(decided 2026-10-14)*
+6. Goals and value statements can be listed and deleted. Another student's goal or value statement → 404. *(decided 2026-10-14)*
 
 ## FR-12 — Contextual goal reminders (Stream processing trigger)
 **Story:** As a student, I want reminders of my own goals and values when I'm struggling, or at random times, so I stay connected to my purpose.
