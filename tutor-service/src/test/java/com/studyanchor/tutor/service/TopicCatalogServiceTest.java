@@ -1,9 +1,12 @@
 package com.studyanchor.tutor.service;
 
+import com.studyanchor.tutor.domain.Material;
 import com.studyanchor.tutor.domain.TopicReference;
 import com.studyanchor.tutor.domain.TopicReferenceRepository;
+import com.studyanchor.tutor.service.MaterialServiceTest.InMemoryMaterials;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +34,11 @@ class TopicCatalogServiceTest {
         }
 
         @Override
+        public boolean existsByIdAndUserId(UUID topicId, String userId) {
+            return existsById(topicId) && byId.get(topicId).userId().equals(userId);
+        }
+
+        @Override
         public List<TopicReference> findByUserId(String userId) {
             return byId.values().stream().filter(t -> t.userId().equals(userId)).toList();
         }
@@ -42,7 +50,8 @@ class TopicCatalogServiceTest {
     }
 
     private final InMemoryTopics topics = new InMemoryTopics();
-    private final TopicCatalogService service = new TopicCatalogService(topics);
+    private final InMemoryMaterials materials = new InMemoryMaterials();
+    private final TopicCatalogService service = new TopicCatalogService(topics, materials);
 
     private static TopicReference kafka(UUID id) {
         return new TopicReference(id, "alice", UUID.randomUUID(), "CSCI318", "Kafka");
@@ -72,5 +81,18 @@ class TopicCatalogServiceTest {
         service.onTopicDeleted(UUID.randomUUID());
 
         assertThat(service.topicsOf("alice")).as("unknown TopicDeleted is ignored").isEmpty();
+    }
+
+    @Test
+    void FR02_topicDeletedRemovesItsMaterials() {
+        UUID id = UUID.randomUUID();
+        UUID other = UUID.randomUUID();
+        Instant now = Instant.parse("2026-10-14T03:00:00Z");
+        materials.save(Material.create("alice", id, "a.md", null, "Kafka", now));
+        materials.save(Material.create("alice", other, "b.md", null, "Streams", now));
+
+        service.onTopicDeleted(id);
+
+        assertThat(materials.byId.values()).singleElement().satisfies(m -> assertThat(m.topicId()).isEqualTo(other));
     }
 }

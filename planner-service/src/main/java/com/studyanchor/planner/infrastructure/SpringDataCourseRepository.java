@@ -15,4 +15,7 @@ interface SpringDataCourseRepository extends JpaRepository<Course, UUID> {
     List<Course> findByUserIdOrderByCodeValue(String userId);
 
     boolean existsByUserIdAndCodeValue(String userId, String code);
+
+    /** {@code TopicsId} = a topic in {@code topics} with this {@code id}. */
+    Optional<Course> findByTopicsId(UUID topicId);
 }

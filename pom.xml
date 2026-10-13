@@ -29,6 +29,8 @@
         <java.version>21</java.version>
         <!-- Release train compatible with Spring Boot 3.5.x -->
         <spring-cloud.version>2025.0.3</spring-cloud.version>
+        <!-- FR-02: PDF text extraction in Tutor (approved by coordinator 2026-10-14) -->
+        <pdfbox.version>3.0.8</pdfbox.version>
     </properties>
 
     <dependencyManagement>
@@ -39,6 +41,11 @@
                 <version>${spring-cloud.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox</artifactId>
+                <version>${pdfbox.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -16,3 +16,9 @@
 | Planner keeps material IDs per topic from `MaterialAdded` and shows `materialCount` | Accepted | *(write in your own words)* |
 | Coordinator approved PDF: use Apache PDFBox directly (not LangChain4j's PDFBox parser) to extract the text | Accepted | *(write in your own words)* |
 | A PDF that can't be read or has no text (scanned) → 400 with a clear message | Accepted | *(write in your own words)* |
+
+## Implementation (build step 6, same day)
+
+| AI proposal | Decision | My rationale |
+|---|---|---|
+| Upload size limit 20 MB (Spring's default is 1 MB, too small for many lecture PDFs); the 50,000-character limit is checked on the extracted text | Accepted | *(write in your own words)* |

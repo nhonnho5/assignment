@@ -13,6 +13,14 @@
     <artifactId>tutor-service</artifactId>
     <name>Tutor Service</name>
 
+    <dependencies>
+        <!-- FR-02 AC4: extracts the text of uploaded PDF materials -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>

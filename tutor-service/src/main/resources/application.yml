@@ -8,6 +8,11 @@ spring:
     url: jdbc:h2:mem:tutor;DB_CLOSE_DELAY=-1
   jpa:
     open-in-view: false
+  servlet:
+    multipart:
+      # FR-02 AC4: room for lecture-slide PDFs; the text limit (50,000 characters) is checked after extraction
+      max-file-size: 20MB
+      max-request-size: 20MB
   cloud:
     function:
       definition: plannerTopics
@@ -26,3 +31,6 @@ spring:
         plannerTopics-in-0:
           destination: planner.topics
           group: tutor-service
+        # FR-02 AC3: StreamBridge output for MaterialAdded
+        tutorMaterials-out-0:
+          destination: tutor.materials

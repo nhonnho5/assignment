@@ -48,10 +48,11 @@ final class PlannerDtos {
 
     // ---- responses ----
 
-    record TopicResponse(UUID id, String name) {
+    /** {@code materialCount}: materials Tutor reported for the topic (FR-02 AC8). */
+    record TopicResponse(UUID id, String name, int materialCount) {
 
         static TopicResponse from(Topic t) {
-            return new TopicResponse(t.id(), t.name());
+            return new TopicResponse(t.id(), t.name(), t.materialCount());
         }
     }
 

@@ -9,5 +9,7 @@ import java.util.UUID;
 /** Spring Data generates the SQL for these methods from their names. */
 interface SpringDataTopicReferenceRepository extends JpaRepository<TopicReference, UUID> {
 
+    boolean existsByTopicIdAndUserId(UUID topicId, String userId);
+
     List<TopicReference> findByUserIdOrderByCourseCodeAscTopicNameAsc(String userId);
 }

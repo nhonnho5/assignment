@@ -136,4 +136,16 @@ class CourseTest {
         assertThat(course.pullDomainEvents()).extracting(e -> ((TopicDeleted) e).topicId())
                 .containsExactlyInAnyOrder(kafka, ddd);
     }
+
+    @Test
+    void FR02_materialCountedOncePerMaterial() {
+        UUID kafka = course.addTopic("Kafka", NOW).id();
+        UUID material = UUID.randomUUID();
+
+        course.recordMaterial(kafka, material);
+        course.recordMaterial(kafka, material);
+        course.recordMaterial(kafka, UUID.randomUUID());
+
+        assertThat(course.topics()).singleElement().satisfies(t -> assertThat(t.materialCount()).isEqualTo(2));
+    }
 }

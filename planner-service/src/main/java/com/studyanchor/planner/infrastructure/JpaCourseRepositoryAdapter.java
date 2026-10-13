@@ -35,6 +35,11 @@ class JpaCourseRepositoryAdapter implements CourseRepository {
     }
 
     @Override
+    public Optional<Course> findByTopicId(UUID topicId) {
+        return jpa.findByTopicsId(topicId);
+    }
+
+    @Override
     public boolean existsByUserIdAndCode(String userId, CourseCode code) {
         return jpa.existsByUserIdAndCodeValue(userId, code.value());
     }

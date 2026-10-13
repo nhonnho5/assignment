@@ -103,13 +103,17 @@ public class Course {
 
     /** FR-01 AC9: a topic still used by a deadline cannot be deleted (409). */
     public void deleteTopic(UUID topicId, Instant now) {
-        Topic topic = topics.stream().filter(t -> t.id().equals(topicId)).findFirst()
-                .orElseThrow(() -> new NotFoundException("Topic " + topicId + " not found"));
+        Topic topic = topic(topicId);
         if (deadlines.stream().anyMatch(d -> d.topicIds().contains(topicId))) {
             throw new ConflictException("Topic " + topic.name() + " is used by a deadline; delete the deadline first");
         }
         topics.remove(topic);
         domainEvents.add(TopicDeleted.of(this, topic, now));
+    }
+
+    /** FR-02 AC8: Tutor reported material for one of this course's topics; repeats are counted once. */
+    public void recordMaterial(UUID topicId, UUID materialId) {
+        topic(topicId).recordMaterial(materialId);
     }
 
     public void deleteDeadline(UUID deadlineId) {
@@ -128,6 +132,11 @@ public class Course {
         List<DomainEvent> events = List.copyOf(domainEvents);
         domainEvents.clear();
         return events;
+    }
+
+    private Topic topic(UUID topicId) {
+        return topics.stream().filter(t -> t.id().equals(topicId)).findFirst()
+                .orElseThrow(() -> new NotFoundException("Topic " + topicId + " not found"));
     }
 
     private boolean hasTopic(UUID topicId) {

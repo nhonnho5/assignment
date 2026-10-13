@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Implements FR-01. Application service for courses, topics and deadlines: loads the student's course,
+ * Implements FR-01, FR-02 AC8. Application service for courses, topics and deadlines: loads the student's course,
  * calls the aggregate, saves it, then publishes the events it registered.
  */
 @Service
@@ -93,6 +93,15 @@ public class CourseService {
         Course course = get(userId, courseId);
         course.deleteDeadline(deadlineId);
         saveAndPublish(course);
+    }
+
+    /** FR-02 AC8: MaterialAdded from Tutor. A topic that is gone (or never existed here) is ignored. */
+    @Transactional
+    public void onMaterialAdded(UUID topicId, UUID materialId) {
+        repository.findByTopicId(topicId).ifPresent(course -> {
+            course.recordMaterial(topicId, materialId);
+            repository.save(course);
+        });
     }
 
     private void saveAndPublish(Course course) {

@@ -48,6 +48,12 @@ class CourseServiceTest {
         }
 
         @Override
+        public Optional<Course> findByTopicId(UUID topicId) {
+            return byId.values().stream().filter(c -> c.topics().stream().anyMatch(t -> t.id().equals(topicId)))
+                    .findFirst();
+        }
+
+        @Override
         public boolean existsByUserIdAndCode(String userId, CourseCode code) {
             return findByUserId(userId).stream().anyMatch(c -> c.code().equals(code));
         }
@@ -101,5 +107,17 @@ class CourseServiceTest {
         assertThat(courseStoredWhenPublished).as("course saved before each create/delete-topic event")
                 .containsExactly(true, true, true, false);
         assertThat(courses.byId).as("course deleted before its TopicDeleted events go out").isEmpty();
+    }
+
+    @Test
+    void FR02_materialForUnknownTopicIsIgnored() {
+        UUID id = service.create("alice", "CSCI318", "SE").id();
+        UUID topicId = service.addTopic("alice", id, "Kafka").id();
+
+        service.onMaterialAdded(topicId, UUID.randomUUID());
+        service.onMaterialAdded(UUID.randomUUID(), UUID.randomUUID());
+
+        assertThat(service.get("alice", id).topics()).singleElement()
+                .satisfies(t -> assertThat(t.materialCount()).isEqualTo(1));
     }
 }

@@ -28,6 +28,11 @@ class JpaTopicReferenceRepositoryAdapter implements TopicReferenceRepository {
     }
 
     @Override
+    public boolean existsByIdAndUserId(UUID topicId, String userId) {
+        return jpa.existsByTopicIdAndUserId(topicId, userId);
+    }
+
+    @Override
     public List<TopicReference> findByUserId(String userId) {
         return jpa.findByUserIdOrderByCourseCodeAscTopicNameAsc(userId);
     }

@@ -13,11 +13,17 @@ spring:
     mapper:
       accept-case-insensitive-enums: true
   cloud:
+    function:
+      definition: tutorMaterials
     stream:
       kafka:
         binder:
           brokers: localhost:9092
       bindings:
+        # FR-02 AC8: MaterialAdded from Tutor
+        tutorMaterials-in-0:
+          destination: tutor.materials
+          group: planner-service
         # FR-01: StreamBridge output for TopicCreated / TopicDeleted
         plannerTopics-out-0:
           destination: planner.topics
