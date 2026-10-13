@@ -13,3 +13,6 @@ spring:
       kafka:
         binder:
           brokers: localhost:9092
+      bindings:
+        focusSessions-out-0:
+          destination: focus.sessions

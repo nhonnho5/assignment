@@ -16,3 +16,8 @@
 | FR-05: ending twice → 409; ending another user's session → 404 | Accepted | *(write in your own words)* |
 | FR-05: no automatic end at planned time | Accepted | *(write in your own words)* |
 | FR-05: Focus stores time block / topic IDs without checking them | Accepted | *(write in your own words)* |
+| FR-05: allowed sites are trimmed and lower-cased when stored, so FR-06 compares them reliably | Accepted | *(write in your own words)* |
+| Extra endpoint `GET /sessions/{id}` (not in FR-05) for demos and Postman | Accepted | *(write in your own words)* |
+| Focus clock ticks in whole milliseconds so event timestamps match what H2 stores | Accepted | *(write in your own words)* |
+| Social's `contextLoads` test needs Kafka running (consumer connects at startup); no test binder, as it isn't an approved dependency | Accepted | *(write in your own words)* |
+| Keep the allowed-sites list in v1 rather than cutting it to simplify (it backs FR-06 off-policy and the "website blocking out of scope" decision) | Accepted, for now | *(write in your own words)* |

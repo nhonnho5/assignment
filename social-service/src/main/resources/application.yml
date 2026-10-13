@@ -9,7 +9,13 @@ spring:
   jpa:
     open-in-view: false
   cloud:
+    function:
+      definition: focusSessionEvents
     stream:
       kafka:
         binder:
           brokers: localhost:9092
+      bindings:
+        focusSessionEvents-in-0:
+          destination: focus.sessions
+          group: social-service
