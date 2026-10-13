@@ -1,0 +1,27 @@
+# Build output
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# Secrets — LLM_API_KEY lives here, never commit it
+.env
+.env.*
+!.env.example
+
+# Personal Claude Code config
+CLAUDE.local.md
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Kafka Streams local state
+kafka-streams-state/
