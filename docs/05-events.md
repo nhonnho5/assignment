@@ -23,7 +23,7 @@
 | `planner.topics` | TopicCreated, TopicDeleted *(TopicDeleted added 2026-10-14)* | Planner | Tutor |
 | `tutor.materials` | MaterialAdded | Tutor | Planner |
 | `tutor.understanding` | UnderstandingRecorded | Tutor | Planner |
-| `focus.sessions` | FocusSessionStarted, FocusSessionEnded | Focus | Social (streams, FR-09), Focus (streams, FR-10), Planner |
+| `focus.sessions` | FocusSessionStarted, FocusSessionEnded | Focus | Social (streams, FR-09), Focus (streams, FR-10), Planner (time blocks, FR-12 AC12) |
 | `focus.distractions` | DistractionLogged | Focus | Focus (streams, FR-12) |
 | `focus.alerts` | DistractionSpikeDetected | Focus (streams) | Planner |
 

@@ -6,6 +6,8 @@ import com.studyanchor.planner.domain.Deadline;
 import com.studyanchor.planner.domain.Goal;
 import com.studyanchor.planner.domain.Reminder;
 import com.studyanchor.planner.domain.StudyCalendar;
+import com.studyanchor.planner.domain.StudyPlan;
+import com.studyanchor.planner.domain.TimeBlock;
 import com.studyanchor.planner.domain.Topic;
 import com.studyanchor.planner.domain.ValueStatement;
 import com.studyanchor.planner.domain.WeeklyAvailability;
@@ -19,7 +21,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-/** Implements FR-01, FR-03, FR-11, FR-12. The JSON shapes of the Planner API: requests in, responses out. No logic. */
+/** Implements FR-01, FR-03, FR-04, FR-11, FR-12. The JSON shapes of the Planner API: requests in, responses out. No logic. */
 final class PlannerDtos {
 
     private PlannerDtos() {
@@ -45,6 +47,10 @@ final class PlannerDtos {
     }
 
     record CreateValueRequest(String text) {
+    }
+
+    /** FR-04 AC8: {@code replace} (default false) confirms replacing an existing plan for the week. */
+    record GeneratePlanRequest(LocalDate weekStart, boolean replace) {
     }
 
     // ---- responses ----
@@ -108,6 +114,29 @@ final class PlannerDtos {
 
         static ValueResponse from(ValueStatement v) {
             return new ValueResponse(v.id(), v.text());
+        }
+    }
+
+    /** FR-04 AC5, AC14: times are Sydney time. */
+    record BlockResponse(UUID id, LocalDate date, DayOfWeek day, String start, String end, long minutes,
+                         UUID topicId, String topicName, String courseCode, String rationale,
+                         TimeBlock.Status status) {
+
+        static BlockResponse from(TimeBlock b) {
+            return new BlockResponse(b.id(), b.date(), b.date().getDayOfWeek(), b.start().toString(),
+                    b.end().toString(), b.minutes(), b.topicId(), b.topicName(), b.courseCode(), b.rationale(),
+                    b.status());
+        }
+    }
+
+    /** FR-04 AC6, AC11: {@code shortfall} is null unless the agent reported too little time. */
+    record PlanResponse(UUID id, LocalDate weekStart, String summary, String shortfall, long totalMinutes,
+                        List<BlockResponse> blocks) {
+
+        static PlanResponse from(StudyPlan p) {
+            return new PlanResponse(p.id(), p.weekStart(), p.summary(), p.shortfall(),
+                    p.blocks().stream().mapToLong(TimeBlock::minutes).sum(),
+                    p.blocks().stream().map(BlockResponse::from).toList());
         }
     }
 

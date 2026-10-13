@@ -26,33 +26,35 @@ class ReminderServiceTest {
     private static final Instant NOW = Instant.parse("2026-10-14T03:10:00Z");
     private static final Instant WINDOW_START = Instant.parse("2026-10-14T03:00:00Z");
 
-    private final List<Reminder> reminders = new ArrayList<>();
+    /** Keeps reminders in a list instead of a database. */
+    static class InMemoryReminders implements ReminderRepository {
+
+        final List<Reminder> reminders = new ArrayList<>();
+
+        public Reminder save(Reminder r) {
+            reminders.remove(r);
+            reminders.add(r);
+            return r;
+        }
+
+        public Optional<Reminder> findByIdAndUserId(UUID id, String userId) {
+            return reminders.stream().filter(r -> r.id().equals(id) && r.userId().equals(userId)).findFirst();
+        }
+
+        public List<Reminder> findUnreadByUserId(String userId) {
+            return reminders.stream().filter(r -> r.userId().equals(userId) && !r.isRead()).toList();
+        }
+
+        public boolean existsByUserIdAndTriggerKey(String userId, String triggerKey) {
+            return reminders.stream().anyMatch(r -> r.userId().equals(userId) && r.triggerKey().equals(triggerKey));
+        }
+    }
+
     private final List<Goal> goals = new ArrayList<>();
     private final List<ValueStatement> values = new ArrayList<>();
 
-    private final ReminderService service = new ReminderService(
-            new ReminderRepository() {
-                public Reminder save(Reminder r) {
-                    reminders.remove(r);
-                    reminders.add(r);
-                    return r;
-                }
-
-                public Optional<Reminder> findByIdAndUserId(UUID id, String userId) {
-                    return reminders.stream().filter(r -> r.id().equals(id) && r.userId().equals(userId)).findFirst();
-                }
-
-                public List<Reminder> findUnreadByUserId(String userId) {
-                    return reminders.stream().filter(r -> r.userId().equals(userId) && !r.isRead()).toList();
-                }
-
-                public boolean existsByUserIdAndTriggerKey(String userId, String triggerKey) {
-                    return reminders.stream().anyMatch(r -> r.userId().equals(userId)
-                            && r.triggerKey().equals(triggerKey));
-                }
-            },
-            fakeGoals(goals), fakeValues(values),
-            Clock.fixed(NOW, ZoneOffset.UTC));
+    private final ReminderService service = new ReminderService(new InMemoryReminders(), fakeGoals(goals),
+            fakeValues(values), Clock.fixed(NOW, ZoneOffset.UTC));
 
     @Test
     void FR12_repeatedSpikeCreatesOneReminder() {
@@ -87,7 +89,7 @@ class ReminderServiceTest {
         assertThat(service.unread("alice")).isEmpty();
     }
 
-    private static GoalRepository fakeGoals(List<Goal> goals) {
+    static GoalRepository fakeGoals(List<Goal> goals) {
         return new GoalRepository() {
             public Goal save(Goal g) {
                 return g;
@@ -106,7 +108,7 @@ class ReminderServiceTest {
         };
     }
 
-    private static ValueStatementRepository fakeValues(List<ValueStatement> values) {
+    static ValueStatementRepository fakeValues(List<ValueStatement> values) {
         return new ValueStatementRepository() {
             public ValueStatement save(ValueStatement v) {
                 return v;

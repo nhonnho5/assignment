@@ -57,6 +57,11 @@ public class WeeklyAvailability {
         }
     }
 
+    /** FR-04 AC3, AC10: a time block must fit inside one slot; touching slots are not joined. */
+    public boolean covers(DayOfWeek day, LocalTime from, LocalTime to) {
+        return slots.stream().anyMatch(s -> s.contains(day, from, to));
+    }
+
     public List<AvailabilitySlot> slots() {
         return List.copyOf(slots);
     }

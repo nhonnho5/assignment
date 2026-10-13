@@ -21,6 +21,16 @@ Single source of truth for where the build is. Claude ticks items when a step is
 - [ ] 9. FR-04 planning agent — **also FR-12 AC3/AC4** (time block completed on `FocusSessionEnded`, missed-block reminders via `@Scheduled`), moved here because time blocks only exist from FR-04
 - [ ] 10. Postman collection + README
 
+## Step 9 (FR-04, FR-12 AC3/AC4) — built and verified with curl against real Gemini 2026-10-14
+Decisions are in `02-requirements.md` FR-04 AC8–15 and FR-12 AC12.
+
+- **planner-service domain:** `StudyPlan` (aggregate root, one per student per week; every block rule, the shortfall rule, block status), `TimeBlock` (entity: Sydney date/times, topic name + course code copy, rationale, `PLANNED → STARTED → COMPLETED` or `PLANNED → MISSED`), `TopicPriority` (domain service: (6 − level) × Σ weight ÷ days), ports `PlanningAgent` and `StudyPlanRepository`, `AgentUnavailableException` (503). `Reminder` has a new kind `MISSED_BLOCK` (`missed:<blockId>`, once per block); `WeeklyAvailability.covers`.
+- **service:** `StudyPlanService` (`generate` with the 409 "send `replace: true`" reminder, `get`, session started/ended, `markMissedBlocks`); `ReminderService.onMissedBlock` shares the goal/value quote picker with spike reminders.
+- **infrastructure:** `PlanningTools` (`getDeadlines`, `getAvailability`, `getTopics`, `getFocusStats`, `addBlocks(list)`, `reportInsufficientTime`), `GeminiPlanningAgent`, `FocusProgressClient` (`RestClient` → Focus `GET /progress/{userId}`), `FocusSessionsConsumer` on `focus.sessions` (group `planner-service`), `MissedBlockScheduler` (`@Scheduled` every minute), JPA adapter. Planner now loads `.env` and has `llm.*` and `focus.base-url`.
+- **presentation:** `StudyPlanController` (`POST /plans`, `GET /plans/{weekStart}`), `PlanResponse` / `BlockResponse`, 503 mapping.
+- **Tests:** `StudyPlanTest` (13), `TopicPriorityTest` (3), `PlanningToolsTest` (6, no LLM), `StudyPlanServiceTest` (6), `ReminderTest` +1.
+- **Found in the curl test and fixed:** the LLM reported "not enough time" and left a free slot empty, even with a clearer prompt; `reportShortfall` is now refused while the plan is empty and a later slot is still free (AC15). The log shows the refusal and the agent's fix.
+
 ## Step 8 (FR-07) — built and verified with curl against real Gemini 2026-10-14
 Decisions are in `02-requirements.md` FR-07 AC6–14; LangChain4j 1.22.0 and the model setting in `09-conventions.md`.
 

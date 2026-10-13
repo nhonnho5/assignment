@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: planner-service
+  config:
+    # FR-04: LLM_API_KEY (and optional LLM_MODEL) from the repo's .env, whether started from the repo or the module
+    import: optional:file:.env[.properties],optional:file:../.env[.properties]
   datasource:
     url: jdbc:h2:mem:planner;DB_CLOSE_DELAY=-1
   jpa:
@@ -14,7 +17,7 @@ spring:
       accept-case-insensitive-enums: true
   cloud:
     function:
-      definition: tutorMaterials;tutorUnderstanding;focusAlerts
+      definition: tutorMaterials;tutorUnderstanding;focusAlerts;focusSessions
     stream:
       kafka:
         binder:
@@ -32,6 +35,19 @@ spring:
         focusAlerts-in-0:
           destination: focus.alerts
           group: planner-service
+        # FR-12 AC3, AC12: FocusSessionStarted / FocusSessionEnded mark time blocks started / completed
+        focusSessions-in-0:
+          destination: focus.sessions
+          group: planner-service
         # FR-01: StreamBridge output for TopicCreated / TopicDeleted
         plannerTopics-out-0:
           destination: planner.topics
+
+# FR-04: planning agent (docs/09-conventions.md, LLM). An empty key keeps the service up; planning → 503.
+llm:
+  api-key: ${LLM_API_KEY:}
+  model: ${LLM_MODEL:gemini-3.5-flash-lite}
+
+# FR-04 AC2: the planning agent's getFocusStats tool calls Focus's GET /progress/{userId}
+focus:
+  base-url: ${FOCUS_URL:http://localhost:8083}

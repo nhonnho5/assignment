@@ -59,6 +59,11 @@ public class AvailabilitySlot {
         return day == other.day && start.isBefore(other.end) && other.start.isBefore(end);
     }
 
+    /** FR-04 AC10: the time from {@code from} to {@code to} on {@code day} lies inside this slot. */
+    boolean contains(DayOfWeek day, LocalTime from, LocalTime to) {
+        return this.day == day && !from.isBefore(start) && !to.isAfter(end);
+    }
+
     public UUID id() {
         return id;
     }

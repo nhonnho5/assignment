@@ -14,7 +14,7 @@
 ## Planner context
 - **Owns:** Course, Topic, Deadline, Availability, StudyPlan / TimeBlock, Goal, ValueStatement, Reminder.
 - **Publishes:** `TopicCreated`, `TopicDeleted`.
-- **Consumes:** `MaterialAdded` (to know which topics have material), `UnderstandingRecorded` (to prioritise topics), `FocusSessionEnded` (to mark time blocks completed), `DistractionSpikeDetected` (to create reminders).
+- **Consumes:** `MaterialAdded` (to know which topics have material), `UnderstandingRecorded` (to prioritise topics), `FocusSessionStarted` and `FocusSessionEnded` (to mark time blocks started and completed, FR-12 AC12), `DistractionSpikeDetected` (to create reminders).
 - **Calls (REST):** focus-service `GET /progress/{userId}` — used by the planning agent's `getFocusStats` tool.
 - **Agent:** Planning agent (FR-04).
 - **Note:** Goals and reminders are kept here rather than in a separate service: reminders are about *why and what* the student studies, and they need goals, values and time blocks together. A separate Motivation service is a possible future split.
