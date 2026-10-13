@@ -22,13 +22,13 @@ Single source of truth for where the build is. Claude ticks items when a step is
 - [ ] 10. Postman collection + README
 
 ## Next step plan — step 5 (approved 2026-10-14, not started)
-Grill done; decisions are in `02-requirements.md` (FR-01 AC5–10, FR-03 AC4–5, FR-11 AC3–6) and `05-events.md` (`TopicDeleted`). Build exactly this:
+Code style: shortest readable code (see `CLAUDE.md` hard rules). Grill done; decisions are in `02-requirements.md` (FR-01 AC5–10, FR-03 AC4–5, FR-11 AC3–6) and `05-events.md` (`TopicDeleted`). Build exactly this:
 
 **planner-service**
-- domain: `Course` (aggregate root; holds `Topic` and `Deadline` entities; registers `TopicCreated`/`TopicDeleted`), `CourseCode`, `Weight` (value objects), `WeeklyAvailability` (aggregate root, one per user) with `AvailabilitySlot` (entity), `Goal`, `ValueStatement` (aggregate roots), `DomainEvent`, `EventPublisher`, `TopicCreated`, `TopicDeleted`, `StudyCalendar` (Sydney zone, Sydney local → instant), `DomainException`/`NotFoundException`/`ConflictException`, repository interfaces for Course, WeeklyAvailability, Goal, ValueStatement.
-- service: `CourseService` (duplicate code per user → 409; others' course → 404; save then publish), `AvailabilityService`, `GoalService`, `ValueStatementService`.
+- domain: `Course` (aggregate root; holds `Topic` and `Deadline` entities; registers `TopicCreated`/`TopicDeleted`), `CourseCode`, `Weight` (value objects), `WeeklyAvailability` (aggregate root, one per user) with `AvailabilitySlot` (entity), `Goal`, `ValueStatement` (aggregate roots), `DomainEvent`, `EventPublisher`, `TopicCreated`, `TopicDeleted`, `StudyCalendar` (Sydney zone, Sydney local → instant), `Text` (one shared trim + length check used by every name/title), `DomainException`/`NotFoundException`/`ConflictException`, repository interfaces for Course, WeeklyAvailability, Goal, ValueStatement.
+- service: `CourseService` (duplicate code per user → 409; others' course → 404; save then publish), `AvailabilityService`, `MotivationService` (goals + value statements).
 - infrastructure: JPA adapters + Spring Data repos (EAGER `Set`s, `open-in-view: false`), `StreamBridgeEventPublisher` (binding `plannerTopics-out-0` → `planner.topics`, key = userId), `TimeConfig` (`Clock.tickMillis(UTC)`).
-- presentation: `CourseController`, `AvailabilityController`, `GoalController`, `ValueStatementController`, `PlannerDtos`, `ApiExceptionHandler`.
+- presentation: `CourseController`, `AvailabilityController`, `MotivationController` (goals + values), `PlannerDtos` (all DTOs in one file), `ApiExceptionHandler`.
 - endpoints: `POST/GET /courses`, `GET/DELETE /courses/{id}`, `POST /courses/{id}/topics`, `DELETE /courses/{id}/topics/{topicId}`, `POST /courses/{id}/deadlines`, `DELETE /courses/{id}/deadlines/{deadlineId}`, `POST /availability/slots`, `GET /availability`, `DELETE /availability/slots/{id}`, `POST/GET /goals`, `POST /goals/{id}/achieve`, `DELETE /goals/{id}`, `POST/GET /values`, `DELETE /values/{id}`.
 
 **tutor-service**
