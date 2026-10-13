@@ -1,6 +1,11 @@
 # CLAUDE.md — instructions for Claude Code
 
-This repo is StudyAnchor, a CSCI318 (UOW) group project: four Spring Boot microservices that help university students (especially students with ADHD) plan, focus and learn.
+This repo is StudyAnchor, a CSCI318 (UOW) project: four Spring Boot microservices that help university students (especially students with ADHD) plan, focus and learn.
+
+## Who you work with
+- The user does this assignment **alone** — there is no team to split work with or hand off to.
+- The user does **not** write code. Claude writes all code; the user reviews it and tests it as a user (curl / Postman). Never ask the user to implement anything (no "Learn by Doing", no `TODO(human)`).
+- Make everything easy for one person: give copy-paste commands (one per block), say exactly what to run and what output to expect, keep decisions to short multiple-choice questions with a recommended option, and do routine work (docs updates, progress ticks, ai-log rows) without being asked.
 
 ## Read before writing any code
 1. `docs/01-domain.md` — problem, scope, glossary (use these terms in code)

@@ -98,6 +98,10 @@
 1. A student can send a friend request; the other user can accept it.
 2. A student can create a study room and others can join it by room ID.
 3. Each student has a sharing setting, `false` by default; presence is visible to others only when `true`.
+4. There is no user registry: any non-blank user ID is a valid user (see `01-domain.md` §5, no authentication). *(decided 2026-10-14)*
+5. Friend request to yourself → 400. Request when already friends, or when a pending request exists in either direction → 409. *(decided 2026-10-14)*
+6. Only the recipient can accept a request; anyone else (including the sender) gets 404. Accepting an already-accepted request → 409. Friendship is mutual once accepted. *(decided 2026-10-14)*
+7. Creating a room (name 1–60 characters) makes the creator its first member. Joining a room you are already in → 409; unknown room → 404. There is no "leave room". *(decided 2026-10-14)*
 
 ## FR-09 — Live "studying now" board (Stream processing)
 **Story:** As a student, I want to see which friends are studying right now, so I feel accompanied and motivated to start.
@@ -108,6 +112,11 @@
 3. The board reflects session start/end within a few seconds.
 4. Implemented as a Kafka Streams stateful aggregation over `focus.sessions`, queried via interactive queries.
 5. Users with sharing off never appear. Presence is stored for every user; the sharing filter is applied at query time against Social's `SharingSetting`, so turning sharing off takes effect immediately. *(decided 2026-10-13)*
+6. The room count includes **every** member currently studying, whatever their sharing setting: it is an anonymous number, so no one "appears". *(decided 2026-10-14)*
+7. Only members of a room can see its count; non-members get 404. *(decided 2026-10-14)*
+8. Elapsed time is computed at query time from the session's `startedAt` and shown as minutes and seconds (`12m 05s`, same format as FR-05) plus the total in seconds. *(decided 2026-10-14)*
+9. The board shows the `topicId` (or null), not the topic name: Social does not consume `planner.topics`. *(decided 2026-10-14)*
+10. The viewer's own sharing setting does not limit what they can see; it only controls whether others see them. *(decided 2026-10-14)*
 
 ## FR-10 — Real-time focus progress and streak (Stream processing)
 **Story:** As a student, I want to see my focus minutes today, this week and my streak, so I can see that I'm improving.
