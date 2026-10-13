@@ -68,11 +68,35 @@ None right now. Run `/grill-me` before each slice to catch new ones.
 ## Reminders for the user
 - [x] ~~**At the start of step 10: run the live missed-block test (FR-12 AC4).**~~ Done 2026-10-14, passed (see Step 10). Closed step 9 without it (the user decided 2026-10-14; Planner was restarted mid-test). It is covered by unit tests (`FR12_blockIsMarkedMissedOnceAfterItEnds`, `FR12_missedBlockCreatesOneReminderQuotingAGoal`, `FR12_startedBlockGetsNoMissedReminder`). To test: add a 25-minute availability slot today that starts a few minutes from now, plan the current week, start no focus session, and about a minute after the block ends check `GET /plans/{weekStart}` (`"status":"MISSED"`) and `GET /reminders` (one `MISSED_BLOCK` reminder; still one a minute later).
 - [x] Working alone instead of a group of 3: approved by the professor (confirmed by the user 2026-10-14).
-- [ ] **After step 10 (code done):** go back to the subject spec (`docs/CSCI318 Project Specification Spring 2026.pdf`, local only, git-ignored) and check every deliverable against it. Known gaps so far:
-  - UML diagrams: use cases + activity diagram per FR, domain model, architecture, database design (AI-assisted artefacts in the repo, origin labelled).
-  - README sample inputs.
-  - LangChain4j dependency (comes with step 8).
-  - Fill in the "My rationale" column in `docs/ai-log/`. The report itself must be written by the user, not by AI.
+- [x] **After step 10 (code done):** spec check done 2026-10-14 — see "Spec check" below.
+
+## Spec check (2026-10-14, against `docs/CSCI318 Project Specification Spring 2026.pdf`)
+**Done in the repo**
+- [x] 4 bounded contexts, each a microservice (Planner, Tutor, Focus, Social)
+- [x] Event-driven communication over Kafka (6 topics, `05-events.md`); REST where needed (Planner → Focus progress)
+- [x] Stream processing, ≥ 2 stories: FR-09, FR-10, FR-12 (Kafka Streams)
+- [x] Agentic AI, ≥ 2 stories: FR-04, FR-07 (LangChain4j + Gemini, tool rules in code)
+- [x] Mandatory stack: JDK 21, Spring Boot, Spring Web, Spring Data JPA, H2, Spring Cloud Stream, LangChain4j, Kafka; extra deps approved by the coordinator
+- [x] ≥ 12 functional requirements as user stories with acceptance criteria (`02-requirements.md`)
+- [x] Layered packages `presentation / service / domain / infrastructure` in every service
+- [x] Data ownership table (`03-bounded-contexts.md`)
+- [x] README with configuration/running instructions and sample inputs per FR
+- [x] Lightweight client: Postman collection that seeds data and exercises every FR
+- [x] AI-use record: `docs/ai-log/`, `CLAUDE.md`, `.claude/skills/`
+
+**Missing repo artefacts (AI-assisted allowed, origin must be labelled)**
+- [ ] Use case diagram(s) + one UML activity diagram per FR (Report §2.1)
+- [ ] UML domain model diagram, classes grouped into sub-domains (§2.4)
+- [ ] Architecture diagram: services, REST vs Kafka, data flows (§3.1)
+- [ ] Layered architecture diagram per service, mapped to packages (§3.2)
+- [ ] Database design (tables per service) (§3.4)
+- [ ] Stream processing queries written out (SQL-like) next to the topology code (§3.5)
+
+**User only (must not be AI-generated)**
+- [ ] "My rationale" column in every `docs/ai-log/` file
+- [ ] Project report (PDF): cover page with contribution statement, abstract with GitHub link, sections 1–5, Harvard references
+- [ ] Final presentation (Week 12)
+- [ ] Keep the GitHub repo private until submission; submit report PDF + repo zip to Moodle
 - [x] Coordinator approved a PDF library for FR-02 material upload (2026-10-14) — Apache PDFBox chosen.
 - [x] Remote `origin` = https://github.com/nhonnho5/assignment.git added 2026-10-14; the user pushes (Claude never pushes).
 - [x] ~~**After step 5 is committed:** remind the user to set up a remote and push (added 2026-10-14). The repo has no remote yet. The user creates a private GitHub/GitLab repo and sends the URL; then either Claude adds `origin` and pushes (after the user approves changing the "never `git push`" rule in `CLAUDE.md`), or the user runs `git remote add origin <url>` and `git push -u origin main`.~~
