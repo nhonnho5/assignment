@@ -9,7 +9,20 @@ spring:
   jpa:
     open-in-view: false
   cloud:
+    function:
+      definition: plannerTopics
     stream:
       kafka:
         binder:
           brokers: localhost:9092
+        bindings:
+          plannerTopics-in-0:
+            consumer:
+              # The topic copy lives in in-memory H2, so rebuild it from the first event on every start
+              resetOffsets: true
+              startOffset: earliest
+      bindings:
+        # FR-01 AC10: TopicCreated / TopicDeleted from Planner
+        plannerTopics-in-0:
+          destination: planner.topics
+          group: tutor-service

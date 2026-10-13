@@ -14,14 +14,16 @@ Single source of truth for where the build is. Claude ticks items when a step is
 - [x] 2. Slice A — FR-05 focus sessions → `focus.sessions` → Social logs
 - [x] 3. FR-10 progress stream + `GET /progress/{userId}`
 - [x] 4. FR-08, FR-09 social + presence store
-- [ ] 5. FR-01, FR-03, FR-11 planner + `TopicCreated` → Tutor
+- [x] 5. FR-01, FR-03, FR-11 planner + `TopicCreated` → Tutor
 - [ ] 6. FR-02 materials + `MaterialAdded` → Planner
 - [ ] 7. FR-06, FR-12 distractions, spike stream, reminders
 - [ ] 8. FR-07 Socratic tutor agent
 - [ ] 9. FR-04 planning agent
 - [ ] 10. Postman collection + README
 
-## Next step plan — step 5 (approved 2026-10-14, not started)
+## Step 5 plan (approved 2026-10-14, built and verified with curl 2026-10-14)
+Small additions made while building: Planner accepts `"monday"` as well as `"MONDAY"`. A fractional weight such as `12.5` is not rejected; it is stored as `12` (decided 2026-10-14).
+
 Code style: shortest readable code (see `CLAUDE.md` hard rules). Grill done; decisions are in `02-requirements.md` (FR-01 AC5–10, FR-03 AC4–5, FR-11 AC3–6) and `05-events.md` (`TopicDeleted`). Build exactly this:
 
 **planner-service**
