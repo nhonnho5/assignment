@@ -65,8 +65,12 @@
 **Acceptance criteria**
 1. A student can start a session with optional time block ID, optional topic ID, planned minutes (10–180) and an allowed-sites list.
 2. A student can have only one active session at a time (second start returns 409 Conflict).
-3. Ending a session records actual minutes.
+3. Ending a session records the actual duration.
 4. Starting publishes `FocusSessionStarted`; ending publishes `FocusSessionEnded`.
+5. The actual duration is computed by the server as the exact time between start and end in minutes and seconds (fractions of a second are dropped). The response shows it as minutes and seconds, e.g. `25m 59s`; the event carries the total in seconds (`actualSeconds`). Ending before or after the planned time is allowed. *(decided 2026-10-13)*
+6. Ending an already-ended session returns 409 Conflict. Ending a session that belongs to another user returns 404 Not Found. *(decided 2026-10-13)*
+7. A session ends only when the student ends it; there is no automatic end when planned minutes run out. *(decided 2026-10-13)*
+8. Time block ID and topic ID are stored as given; Focus does not check that they exist (it owns neither). *(decided 2026-10-13)*
 
 ## FR-06 — Log a distraction
 **Story:** As a student, I want to quickly log when I get distracted, so I can see my patterns and get support.

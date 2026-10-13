@@ -68,7 +68,7 @@
 | sessionId | UUID |
 | timeBlockId | UUID, nullable |
 | topicId | UUID, nullable |
-| actualMinutes | int |
+| actualSeconds | long — exact duration in whole seconds *(decided 2026-10-13, replaces `actualMinutes`)* |
 | endedAt | instant |
 
 ### DistractionLogged — FR-06
@@ -97,7 +97,7 @@
   "sessionId": "a7d0c1b2-1111-4222-8333-944455566677",
   "timeBlockId": null,
   "topicId": "c0ffee00-0000-4000-8000-000000000001",
-  "actualMinutes": 45,
+  "actualSeconds": 2715,
   "endedAt": "2026-10-14T03:40:00Z"
 }
 ```

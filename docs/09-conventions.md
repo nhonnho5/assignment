@@ -13,7 +13,7 @@ Only the dependencies above, plus `spring-boot-starter-test`. **Any other depend
 
 | Dependency | Status |
 |---|---|
-| `spring-cloud-stream-binder-kafka-streams` | ⚠ Part of Spring Cloud Stream, but **confirm with coordinator** before relying on it (needed for FR-09, FR-10, FR-12) |
+| `spring-cloud-stream-binder-kafka-streams` | ✓ Approved by coordinator *(2026-10-13)* — used for FR-09, FR-10, FR-12 |
 | Lombok | ✗ Not used — Java records replace it |
 | `spring-boot-starter-validation` | ✗ Not used — invariants are enforced in domain code |
 | `langchain4j-google-ai-gemini` | ✓ LLM provider module, part of LangChain4j *(decided 2026-10-13)* |
@@ -74,5 +74,5 @@ Dependencies point inward: `presentation → service → domain ← infrastructu
 
 ## Open decisions (author to decide)
 - [x] **LLM provider:** Google Gemini (free tier) via LangChain4j; key in `LLM_API_KEY`. *(decided 2026-10-13)*
-- [ ] Confirm Kafka Streams binder with the coordinator.
+- [x] Confirm Kafka Streams binder with the coordinator. *(approved 2026-10-13)*
 - [ ] Final application name.

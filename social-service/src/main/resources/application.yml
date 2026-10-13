@@ -1,0 +1,15 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: social-service
+  datasource:
+    url: jdbc:h2:mem:social;DB_CLOSE_DELAY=-1
+  jpa:
+    open-in-view: false
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
