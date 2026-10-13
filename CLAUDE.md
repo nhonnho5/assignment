@@ -26,7 +26,6 @@ If code and docs disagree, the docs win. If the docs are unclear or contradictor
 - Keep code short, efficient and easy to read: a simple function is a few lines, no boilerplate, no unused helpers or getters, shared checks written once.
 - Work in small steps. After each step: the build passes, the services start, and the user is told how to test the step with curl or Postman.
 - Test first for domain rules: write a failing JUnit test (named `FRxx_rule`) before the code that satisfies it. Agent tool rules are unit-tested without calling the LLM.
-- Never read `.env`. Never `git push` — the user pushes.
 
 ## Where we are
 `docs/progress.md` tracks the current step and open questions. Read it at the start of every session; tick items only when a step is verified.
