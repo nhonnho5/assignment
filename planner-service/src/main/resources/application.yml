@@ -14,7 +14,7 @@ spring:
       accept-case-insensitive-enums: true
   cloud:
     function:
-      definition: tutorMaterials
+      definition: tutorMaterials;focusAlerts
     stream:
       kafka:
         binder:
@@ -23,6 +23,10 @@ spring:
         # FR-02 AC8: MaterialAdded from Tutor
         tutorMaterials-in-0:
           destination: tutor.materials
+          group: planner-service
+        # FR-12 AC2: DistractionSpikeDetected from Focus's spike stream
+        focusAlerts-in-0:
+          destination: focus.alerts
           group: planner-service
         # FR-01: StreamBridge output for TopicCreated / TopicDeleted
         plannerTopics-out-0:

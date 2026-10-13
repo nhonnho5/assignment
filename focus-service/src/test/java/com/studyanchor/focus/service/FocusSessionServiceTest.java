@@ -1,6 +1,8 @@
 package com.studyanchor.focus.service;
 
 import com.studyanchor.focus.domain.ConflictException;
+import com.studyanchor.focus.domain.Distraction;
+import com.studyanchor.focus.domain.DistractionLogged;
 import com.studyanchor.focus.domain.DomainEvent;
 import com.studyanchor.focus.domain.FocusSession;
 import com.studyanchor.focus.domain.FocusSessionEnded;
@@ -72,10 +74,31 @@ class FocusSessionServiceTest {
         assertThat(savedBeforePublish).containsOnly(true);
     }
 
+    @Test
+    void FR06_cannotLogOnAnotherUsersSession() {
+        FocusSession alices = start("alice");
+
+        assertThatThrownBy(() -> service.logDistraction("bob", alices.id(), "PHONE", null, null))
+                .isInstanceOf(NotFoundException.class);
+        assertThat(alices.distractions()).isEmpty();
+    }
+
+    @Test
+    void FR06_loggingPublishesDistractionLogged() {
+        FocusSession session = start("alice");
+
+        Distraction distraction = service.logDistraction("alice", session.id(), "phone", null, "checked messages");
+
+        assertThat(service.get("alice", session.id()).distractions()).containsExactly(distraction);
+        assertThat(published).last().isInstanceOf(DistractionLogged.class);
+        assertThat(savedBeforePublish).containsOnly(true);
+    }
+
     private static UUID sessionIdOf(DomainEvent event) {
         return switch (event) {
             case FocusSessionStarted e -> e.sessionId();
             case FocusSessionEnded e -> e.sessionId();
+            case DistractionLogged e -> e.sessionId();
             default -> null;
         };
     }

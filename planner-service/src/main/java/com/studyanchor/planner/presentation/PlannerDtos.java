@@ -4,6 +4,7 @@ import com.studyanchor.planner.domain.AvailabilitySlot;
 import com.studyanchor.planner.domain.Course;
 import com.studyanchor.planner.domain.Deadline;
 import com.studyanchor.planner.domain.Goal;
+import com.studyanchor.planner.domain.Reminder;
 import com.studyanchor.planner.domain.StudyCalendar;
 import com.studyanchor.planner.domain.Topic;
 import com.studyanchor.planner.domain.ValueStatement;
@@ -18,7 +19,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-/** Implements FR-01, FR-03, FR-11. The JSON shapes of the Planner API: requests in, responses out. No logic. */
+/** Implements FR-01, FR-03, FR-11, FR-12. The JSON shapes of the Planner API: requests in, responses out. No logic. */
 final class PlannerDtos {
 
     private PlannerDtos() {
@@ -104,6 +105,13 @@ final class PlannerDtos {
 
         static ValueResponse from(ValueStatement v) {
             return new ValueResponse(v.id(), v.text());
+        }
+    }
+
+    record ReminderResponse(UUID id, Reminder.Kind kind, String message, Instant createdAt, Instant readAt) {
+
+        static ReminderResponse from(Reminder r) {
+            return new ReminderResponse(r.id(), r.kind(), r.message(), r.createdAt(), r.readAt());
         }
     }
 }

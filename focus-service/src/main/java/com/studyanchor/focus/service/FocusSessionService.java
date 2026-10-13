@@ -1,6 +1,7 @@
 package com.studyanchor.focus.service;
 
 import com.studyanchor.focus.domain.ConflictException;
+import com.studyanchor.focus.domain.Distraction;
 import com.studyanchor.focus.domain.EventPublisher;
 import com.studyanchor.focus.domain.FocusSession;
 import com.studyanchor.focus.domain.FocusSessionRepository;
@@ -13,7 +14,7 @@ import java.util.Collection;
 import java.util.UUID;
 
 /**
- * Implements FR-05. Application service for focus sessions: loads or creates the aggregate,
+ * Implements FR-05, FR-06. Application service for focus sessions: loads or creates the aggregate,
  * calls it, saves it, then publishes the events it registered.
  */
 @Service
@@ -47,6 +48,15 @@ public class FocusSessionService {
         FocusSession session = get(userId, sessionId);
         session.end(clock.instant());
         return saveAndPublish(session);
+    }
+
+    /** FR-06 AC1–AC4: logs a distraction in the user's own active session (ended → 409, other user's → 404). */
+    @Transactional
+    public Distraction logDistraction(String userId, UUID sessionId, String type, String site, String note) {
+        FocusSession session = get(userId, sessionId);
+        Distraction distraction = session.logDistraction(type, site, note, clock.instant());
+        saveAndPublish(session);
+        return distraction;
     }
 
     @Transactional(readOnly = true)

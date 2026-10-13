@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** Implements FR-05. What the API returns for a focus session. */
+/** Implements FR-05, FR-06 AC8. What the API returns for a focus session, with its distractions in logged order. */
 public record SessionResponse(
         UUID id,
         String userId,
@@ -19,7 +19,8 @@ public record SessionResponse(
         Instant startedAt,
         Instant endedAt,
         String actualDuration,
-        Long actualSeconds) {
+        Long actualSeconds,
+        List<DistractionResponse> distractions) {
 
     static SessionResponse from(FocusSession session) {
         Duration actual = session.actualDuration();
@@ -34,6 +35,7 @@ public record SessionResponse(
                 session.startedAt(),
                 session.endedAt(),
                 actual == null ? null : actual.toMinutes() + "m " + actual.toSecondsPart() + "s",
-                actual == null ? null : actual.toSeconds());
+                actual == null ? null : actual.toSeconds(),
+                session.distractions().stream().map(DistractionResponse::from).toList());
     }
 }

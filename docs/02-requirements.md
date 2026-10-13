@@ -93,6 +93,10 @@
 2. It has a type (PHONE, SOCIAL_MEDIA, OTHER_SITE, THOUGHT, OTHER), optional site and optional note.
 3. If a site is given and is not in the session's allowed-sites list, the distraction is marked off-policy.
 4. Logging publishes `DistractionLogged`.
+5. `POST /sessions/{sessionId}/distractions` with `{type, site, note}`. An ended session → 409; another student's or an unknown session → 404. The time is the server's clock (no backdating). *(decided 2026-10-14)*
+6. `type` is case-insensitive (`phone` = `PHONE`); missing or unknown → 400. Site (optional) is at most 200 characters and note (optional) at most 500, both trimmed; blank counts as not given. The note stays in Focus and is not in the event. *(decided 2026-10-14)*
+7. Sites are compared as hosts: lower-cased, without `http://` / `https://`, `www.`, port or path; allowed sites are cleaned the same way when the session starts. A subdomain of an allowed site is allowed (`docs.google.com` is allowed by `google.com`). With no site the distraction is not off-policy; with a site and an empty allowed-sites list it is off-policy. *(decided 2026-10-14)*
+8. `GET /sessions/{id}` also lists the session's distractions (type, site, note, off-policy, logged at). *(decided 2026-10-14)*
 
 ## FR-07 — Socratic AI tutor (Agentic AI)
 **Story:** As a student, I want an AI tutor that guides me with questions and hints instead of giving me the answer, so I actually learn.
@@ -167,6 +171,10 @@
 5. Optionally, random reminders are created at a configurable frequency (max N per day).
 6. A student can list unread reminders and mark them read.
 7. *(Stretch)* the reminder text is phrased by the LLM in an encouraging tone, using the student's own words.
+8. The 30-minute windows are fixed (tumbling) windows aligned to the clock (10:00–10:30, 10:30–11:00, …), counted per student across all their sessions, with event time = when the distraction was logged. The alert is published once, when a window reaches its 3rd distraction (`distractionCount` = 3); a 4th or later distraction in the same window publishes nothing. Distractions that straddle a window boundary are not combined (accepted trade-off for simplicity). *(decided 2026-10-14)*
+9. The reminder quotes one item picked at random from the student's not-yet-achieved goals (title and "why") and value statements. With nothing to quote, the reminder still gets a general encouraging message plus a tip to add a goal. A repeated `DistractionSpikeDetected` for the same student and `windowStart` creates no second reminder. *(decided 2026-10-14)*
+10. `GET /reminders` lists the student's unread reminders, newest first; `POST /reminders/{id}/read` marks one read and records when. Marking it read again → 409; another student's reminder → 404. *(decided 2026-10-14)*
+11. Scope: AC3 and AC4 need time blocks, which FR-04 creates, so they are built in step 9 with the planning agent. AC5 (optional) and AC7 (stretch) are not built for now; revisit after step 10. *(decided 2026-10-14)*
 
 ---
 

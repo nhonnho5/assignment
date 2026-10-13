@@ -16,10 +16,19 @@ Single source of truth for where the build is. Claude ticks items when a step is
 - [x] 4. FR-08, FR-09 social + presence store
 - [x] 5. FR-01, FR-03, FR-11 planner + `TopicCreated` → Tutor
 - [x] 6. FR-02 materials + `MaterialAdded` → Planner
-- [ ] 7. FR-06, FR-12 distractions, spike stream, reminders
+- [x] 7. FR-06, FR-12 distractions, spike stream, reminders
 - [ ] 8. FR-07 Socratic tutor agent
-- [ ] 9. FR-04 planning agent
+- [ ] 9. FR-04 planning agent — **also FR-12 AC3/AC4** (time block completed on `FocusSessionEnded`, missed-block reminders via `@Scheduled`), moved here because time blocks only exist from FR-04
 - [ ] 10. Postman collection + README
+
+## Step 7 (FR-06, FR-12) — built and verified with curl 2026-10-14
+Decisions are in `02-requirements.md` FR-06 AC5–8 and FR-12 AC8–11; `05-events.md` `DistractionSpikeDetected`.
+
+- **focus-service:** `FocusSession.logDistraction` (aggregate root) with `Distraction` (value object, `@Embeddable` record), `DistractionType`, `Site` (host cleanup + subdomain match; allowed sites are now cleaned the same way at start), events `DistractionLogged` → `focus.distractions` and `DistractionSpikeDetected` (holds the 30 min / 3 rule). `DistractionSpikeTopology`: per-user 30-min tumbling count (caching off, 1-min grace) → `focus.alerts`. Kafka record timestamp = event `occurredAt`. `POST /sessions/{id}/distractions`; `GET /sessions/{id}` lists distractions. Each Streams function has its own `applicationId`.
+- **planner-service:** `Reminder` (aggregate root, `triggerKey` = `spike:<windowStart>` unique per user), `Goal.quote()` / `ValueStatement.quote()`, `ReminderService`, `FocusAlertsConsumer` on `focus.alerts` (group `planner-service`), `ReminderController` (`GET /reminders`, `POST /reminders/{id}/read`).
+- **Tests:** `DistractionTest` (9), `FocusSessionServiceTest` +2, `ReminderTest` (3), `ReminderServiceTest` (3).
+- **Not built:** FR-12 AC5 (random reminders, optional) and AC7 (LLM text, stretch) — revisit after step 10.
+- **FR-10 bug found and fixed (separate commit):** the progress stream died ~30 s after a session ended because Kafka 4 rejects changelog records stamped 11 h ahead (Sydney timeline). Its changelog topic now allows up to 1 day ahead. After pulling this, run `docker compose down` and `docker compose up -d` once so the topic is recreated.
 
 ## Step 6 (FR-02) — built and verified with curl 2026-10-14
 Decisions are in `02-requirements.md` FR-02 AC4–8; PDFBox approved in `09-conventions.md`.

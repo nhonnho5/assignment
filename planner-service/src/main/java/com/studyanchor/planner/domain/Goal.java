@@ -60,8 +60,17 @@ public class Goal {
         achievedAt = now;
     }
 
+    /** FR-12 AC2: the goal in the student's own words, for a reminder. */
+    public String quote() {
+        return "your goal \"" + title + "\": \"" + why + "\"";
+    }
+
     public UUID id() {
         return id;
+    }
+
+    public String userId() {
+        return userId;
     }
 
     public String title() {

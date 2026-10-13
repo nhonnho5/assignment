@@ -9,6 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 
@@ -19,14 +20,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
 /**
- * Implements FR-05. Aggregate root: one timed focus session of one student.
- * It can only be changed through {@link #start} and {@link #end}; both register a domain event
- * that the application service publishes after saving.
+ * Implements FR-05, FR-06. Aggregate root: one timed focus session of one student and the distractions logged in it.
+ * It can only be changed through {@link #start}, {@link #logDistraction} and {@link #end}; each registers a domain
+ * event that the application service publishes after saving.
  */
 @Entity
 @Table(name = "focus_session")
@@ -51,6 +51,12 @@ public class FocusSession {
     @Column(name = "site")
     private Set<String> allowedSites = new LinkedHashSet<>();
 
+    /** In the order they were logged; an indexed list, so loading it together with allowedSites never repeats rows. */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "distraction", joinColumns = @JoinColumn(name = "session_id"))
+    @OrderColumn(name = "position")
+    private List<Distraction> distractions = new ArrayList<>();
+
     @Column(nullable = false)
     private Instant startedAt;
 
@@ -68,7 +74,7 @@ public class FocusSession {
 
     /**
      * Starts a new session (FR-05 AC1). Time block and topic IDs are stored as given (AC8).
-     * Allowed sites are trimmed and lower-cased so FR-06 can compare them; blank entries are dropped.
+     * Allowed sites are cleaned to hosts so FR-06 can compare them (FR-06 AC7); blank entries are dropped.
      */
     public static FocusSession start(String userId, UUID timeBlockId, UUID topicId, Integer plannedMinutes,
                                      Collection<String> allowedSites, Instant now) {
@@ -83,14 +89,26 @@ public class FocusSession {
         session.plannedMinutes = PlannedMinutes.of(plannedMinutes);
         if (allowedSites != null) {
             for (String site : allowedSites) {
-                if (site != null && !site.isBlank()) {
-                    session.allowedSites.add(site.trim().toLowerCase(Locale.ROOT));
+                Site cleaned = Site.of(site);
+                if (cleaned != null) {
+                    session.allowedSites.add(cleaned.host());
                 }
             }
         }
         session.startedAt = now;
         session.domainEvents.add(FocusSessionStarted.of(session));
         return session;
+    }
+
+    /** Logs an interruption, only while the session is active (FR-06 AC1–AC3); registers DistractionLogged (AC4). */
+    public Distraction logDistraction(String type, String site, String note, Instant now) {
+        if (!isActive()) {
+            throw new ConflictException("Focus session " + id + " has ended; distractions can only be logged while it is active");
+        }
+        Distraction distraction = Distraction.log(type, site, note, allowedSites, now);
+        distractions.add(distraction);
+        domainEvents.add(DistractionLogged.of(this, distraction));
+        return distraction;
     }
 
     /** Ends the session and records the exact duration, dropping fractions of a second (FR-05 AC3, AC5, AC6). */
@@ -139,6 +157,10 @@ public class FocusSession {
 
     public Set<String> allowedSites() {
         return Set.copyOf(allowedSites);
+    }
+
+    public List<Distraction> distractions() {
+        return List.copyOf(distractions);
     }
 
     public Instant startedAt() {

@@ -10,7 +10,7 @@ spring:
     open-in-view: false
   cloud:
     function:
-      definition: focusProgress
+      definition: focusProgress;distractionSpikes
     stream:
       kafka:
         binder:
@@ -18,19 +18,33 @@ spring:
         streams:
           binder:
             brokers: localhost:9092
-            applicationId: focus-progress
+            # One Kafka Streams application per function, each with its own state and consumer group
+            functions:
+              focusProgress:
+                applicationId: focus-progress
+              distractionSpikes:
+                applicationId: focus-distraction-spikes
           bindings:
             focusProgress-in-0:
               consumer:
                 # FR-10: event time = startedAt on the Sydney timeline
                 timestampExtractorBeanName: sydneyDayTimestampExtractor
-      # Two binders on the classpath: the StreamBridge output is pinned to the regular Kafka binder;
+      # Two binders on the classpath: the StreamBridge outputs are pinned to the regular Kafka binder;
       # KStream functions are picked up by the Kafka Streams binder automatically.
       bindings:
         # FR-05: StreamBridge output
         focusSessions-out-0:
           destination: focus.sessions
           binder: kafka
+        # FR-06: StreamBridge output
+        focusDistractions-out-0:
+          destination: focus.distractions
+          binder: kafka
         # FR-10: progress stream
         focusProgress-in-0:
           destination: focus.sessions
+        # FR-12: spike stream, focus.distractions → focus.alerts
+        distractionSpikes-in-0:
+          destination: focus.distractions
+        distractionSpikes-out-0:
+          destination: focus.alerts

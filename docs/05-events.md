@@ -89,6 +89,8 @@ Published when a topic is deleted, or once per topic when its course is deleted.
 | offPolicy | boolean |
 
 ### DistractionSpikeDetected — FR-12
+Published once per student per fixed 30-minute window, when the window reaches 3 distractions; `distractionCount` is therefore 3. `occurredAt` is when the stream detected the spike (moments after the 3rd distraction). Focus sets each Kafka record's timestamp to the event's `occurredAt`, so the window uses the time the distraction was logged. Planner ignores a repeat with the same `windowStart`. *(decided 2026-10-14)*
+
 | Field | Type |
 |---|---|
 | distractionCount | int |

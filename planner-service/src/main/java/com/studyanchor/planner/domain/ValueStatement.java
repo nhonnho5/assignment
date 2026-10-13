@@ -38,8 +38,17 @@ public class ValueStatement {
         return value;
     }
 
+    /** FR-12 AC2: the value statement in the student's own words, for a reminder. */
+    public String quote() {
+        return "\"" + text + "\"";
+    }
+
     public UUID id() {
         return id;
+    }
+
+    public String userId() {
+        return userId;
     }
 
     public String text() {
