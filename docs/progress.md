@@ -19,9 +19,15 @@ Single source of truth for where the build is. Claude ticks items when a step is
 - [x] 7. FR-06, FR-12 distractions, spike stream, reminders
 - [x] 8. FR-07 Socratic tutor agent
 - [x] 9. FR-04 planning agent — **also FR-12 AC3/AC4** (time block completed on `FocusSessionEnded`, missed-block reminders via `@Scheduled`), moved here because time blocks only exist from FR-04
-- [ ] 10. Postman collection + README
+- [x] 10. Postman collection + README
 
-## Step 9 (FR-04, FR-12 AC3/AC4) — built and verified with curl against real Gemini 2026-10-14 (live missed-block test still to do, see Reminders)
+## Step 10 (Postman + README) — verified 2026-10-14
+- **Postman:** `postman/StudyAnchor.postman_collection.json` (folders 0 Setup, then FR-01 → FR-04/12; every request has tests; new users each run) + `postman/sample-material.md`. Added: topic delete reaches Tutor (FR-01 AC9/10), goal delete and another student's → 404 (FR-11 AC6), accept twice → 409 (FR-08 AC6), plan with no availability → 400 (FR-04 AC9). newman run against real Gemini: 97 requests, 141 assertions, 0 failed.
+- **README.md:** prerequisites, `.env`, run steps, Postman/newman, one curl sample per FR (non-LLM ones run for real), error codes, troubleshooting.
+- **`.env.example` deleted** (user's decision); `!.env.example` removed from `.gitignore`.
+- **Live FR-12 AC4 test (carried over from step 9):** block 08:19–08:44 today, no session → `MISSED` at 08:44:24 and one `MISSED_BLOCK` reminder; still one reminder 75 s later.
+
+## Step 9 (FR-04, FR-12 AC3/AC4) — built and verified with curl against real Gemini 2026-10-14 (live missed-block test done in step 10)
 Decisions are in `02-requirements.md` FR-04 AC8–15 and FR-12 AC12.
 
 - **planner-service domain:** `StudyPlan` (aggregate root, one per student per week; every block rule, the shortfall rule, block status), `TimeBlock` (entity: Sydney date/times, topic name + course code copy, rationale, `PLANNED → STARTED → COMPLETED` or `PLANNED → MISSED`), `TopicPriority` (domain service: (6 − level) × Σ weight ÷ days), ports `PlanningAgent` and `StudyPlanRepository`, `AgentUnavailableException` (503). `Reminder` has a new kind `MISSED_BLOCK` (`missed:<blockId>`, once per block); `WeeklyAvailability.covers`.
@@ -60,7 +66,7 @@ Decisions are in `02-requirements.md` FR-02 AC4–8; PDFBox approved in `09-conv
 None right now. Run `/grill-me` before each slice to catch new ones.
 
 ## Reminders for the user
-- [ ] **At the start of step 10: run the live missed-block test (FR-12 AC4).** Closed step 9 without it (the user decided 2026-10-14; Planner was restarted mid-test). It is covered by unit tests (`FR12_blockIsMarkedMissedOnceAfterItEnds`, `FR12_missedBlockCreatesOneReminderQuotingAGoal`, `FR12_startedBlockGetsNoMissedReminder`). To test: add a 25-minute availability slot today that starts a few minutes from now, plan the current week, start no focus session, and about a minute after the block ends check `GET /plans/{weekStart}` (`"status":"MISSED"`) and `GET /reminders` (one `MISSED_BLOCK` reminder; still one a minute later).
+- [x] ~~**At the start of step 10: run the live missed-block test (FR-12 AC4).**~~ Done 2026-10-14, passed (see Step 10). Closed step 9 without it (the user decided 2026-10-14; Planner was restarted mid-test). It is covered by unit tests (`FR12_blockIsMarkedMissedOnceAfterItEnds`, `FR12_missedBlockCreatesOneReminderQuotingAGoal`, `FR12_startedBlockGetsNoMissedReminder`). To test: add a 25-minute availability slot today that starts a few minutes from now, plan the current week, start no focus session, and about a minute after the block ends check `GET /plans/{weekStart}` (`"status":"MISSED"`) and `GET /reminders` (one `MISSED_BLOCK` reminder; still one a minute later).
 - [x] Working alone instead of a group of 3: approved by the professor (confirmed by the user 2026-10-14).
 - [ ] **After step 10 (code done):** go back to the subject spec (`docs/CSCI318 Project Specification Spring 2026.pdf`, local only, git-ignored) and check every deliverable against it. Known gaps so far:
   - UML diagrams: use cases + activity diagram per FR, domain model, architecture, database design (AI-assisted artefacts in the repo, origin labelled).

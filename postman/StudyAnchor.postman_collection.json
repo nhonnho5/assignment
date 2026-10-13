@@ -1,0 +1,3490 @@
+{
+  "info": {
+    "name": "StudyAnchor",
+    "description": "Demo data and checks for every functional requirement (FR-01..FR-12).\n\nRun the whole collection top to bottom with the Collection Runner (or Newman). Folder 0 creates new user IDs\n(alice-xxxx, bob-xxxx) each run, so the collection can be run again without restarting the services.\n\nNeeds: Kafka (docker compose up -d) and all four services running. Folders 10 and 11 call Gemini and need\nLLM_API_KEY in .env; a 503 there means the LLM is unavailable or over quota: wait a minute and run the folder again.\nFolder 2 uploads postman/sample-material.md: set Postman's working directory to the postman folder\n(Settings > General), or pick the file in the request's Body tab.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "planner",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "tutor",
+      "value": "http://localhost:8082"
+    },
+    {
+      "key": "focus",
+      "value": "http://localhost:8083"
+    },
+    {
+      "key": "social",
+      "value": "http://localhost:8084"
+    }
+  ],
+  "item": [
+    {
+      "name": "0 Setup",
+      "description": "New user IDs and dates for this run (dates are Australia/Sydney days).",
+      "item": [
+        {
+          "name": "New run: users and dates",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "const run = Math.random().toString(36).slice(2, 6);",
+                  "set('alice', 'alice-' + run);",
+                  "set('bob', 'bob-' + run);",
+                  "const today = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' }) + 'T00:00:00Z');",
+                  "const day = n => new Date(today.getTime() + n * 864e5).toISOString().slice(0, 10);",
+                  "const toMonday = (8 - today.getUTCDay()) % 7 || 7;",
+                  "set('nextMonday', day(toMonday));",
+                  "set('nextTuesday', day(toMonday + 1));",
+                  "set('endedMonday', day(toMonday - 14));",
+                  "set('dueAt', day(14) + 'T23:59');",
+                  "set('pastDueAt', day(-1) + 'T09:00');",
+                  "set('targetDate', day(60));",
+                  "set('yesterday', day(-1));",
+                  "set('longText', 'x'.repeat(281));",
+                  "['courseId', 'topicId', 'topic2Id', 'deadlineId', 'materialId', 'slotId', 'goalId', 'goal2Id', 'sessionId',",
+                  " 'session2Id', 'session3Id', 'requestId', 'roomId', 'reminderId', 'tutoringId', 'tutorLevel', 'blockId',",
+                  " 'blockTopicId', 'scratchTopicId'].forEach(k => pm.collectionVariables.unset(k));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('the new user has no courses', () => pm.expect(j).to.eql([]));",
+                  "  console.log('Run users:', pm.collectionVariables.get('alice'), pm.collectionVariables.get('bob'),",
+                  "    '| next Monday:', pm.collectionVariables.get('nextMonday'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/courses"
+          }
+        }
+      ]
+    },
+    {
+      "name": "1 FR-01 Courses, topics, deadlines (Planner)",
+      "description": "FR-01. Creating a topic publishes TopicCreated to planner.topics; Tutor keeps a copy.",
+      "item": [
+        {
+          "name": "Create course (code is upper-cased)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.test('code upper-cased (AC6)', () => pm.expect(j.code).to.eql('CSCI318'));",
+                  "  set('courseId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"csci318\",\n  \"name\": \"Software Engineering Practices and Principles\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/courses"
+          }
+        },
+        {
+          "name": "Same course code again → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"CSCI318\",\n  \"name\": \"Duplicate\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/courses"
+          }
+        },
+        {
+          "name": "Add topic \"Recursion\"",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  set('topicId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Recursion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/courses/{{courseId}}/topics"
+          }
+        },
+        {
+          "name": "Add topic \"Domain-Driven Design\"",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  set('topic2Id', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Domain-Driven Design\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/courses/{{courseId}}/topics"
+          }
+        },
+        {
+          "name": "Same topic name, other case → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"recursion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/courses/{{courseId}}/topics"
+          }
+        },
+        {
+          "name": "Add deadline (Sydney time, 40 %)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.test('due time shown back in Sydney time (AC8)', () => pm.expect(j.dueAt).to.eql(pm.collectionVariables.get('dueAt')));",
+                  "  set('deadlineId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Assignment 2\",\n  \"dueAt\": \"{{dueAt}}\",\n  \"weight\": 40,\n  \"topicIds\": [\n    \"{{topicId}}\",\n    \"{{topic2Id}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/courses/{{courseId}}/deadlines"
+          }
+        },
+        {
+          "name": "Deadline in the past → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Quiz 1\",\n  \"dueAt\": \"{{pastDueAt}}\",\n  \"weight\": 10,\n  \"topicIds\": [\n    \"{{topicId}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/courses/{{courseId}}/deadlines"
+          }
+        },
+        {
+          "name": "Total weight over 100 % → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Final exam\",\n  \"dueAt\": \"{{dueAt}}\",\n  \"weight\": 70,\n  \"topicIds\": [\n    \"{{topicId}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/courses/{{courseId}}/deadlines"
+          }
+        },
+        {
+          "name": "Delete a topic a deadline uses → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/courses/{{courseId}}/topics/{{topicId}}"
+          }
+        },
+        {
+          "name": "Get course",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('2 topics, 1 deadline', () => {",
+                  "    pm.expect(j.topics).to.have.length(2);",
+                  "    pm.expect(j.deadlines).to.have.length(1);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/courses/{{courseId}}"
+          }
+        },
+        {
+          "name": "Another student reads it → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              }
+            ],
+            "url": "{{planner}}/courses/{{courseId}}"
+          }
+        },
+        {
+          "name": "Tutor knows the topics (TopicCreated)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Wait for Kafka to deliver the event first.",
+                  "setTimeout(() => {}, 2000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('Tutor has both topics (AC4, AC10)', () => pm.expect(j.map(t => t.topicName)).to.have.members(['Recursion', 'Domain-Driven Design']));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{tutor}}/topics"
+          }
+        },
+        {
+          "name": "Add a topic to delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('scratchTopicId', j.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Scratch topic\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/courses/{{courseId}}/topics"
+          }
+        },
+        {
+          "name": "Delete it (TopicDeleted)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/courses/{{courseId}}/topics/{{scratchTopicId}}"
+          }
+        },
+        {
+          "name": "Tutor dropped it (TopicDeleted)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Wait for Kafka to deliver the event first.",
+                  "setTimeout(() => {}, 2000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('only the two real topics are left (AC9, AC10)', () => pm.expect(j.map(t => t.topicName)).to.have.members(['Recursion', 'Domain-Driven Design']));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{tutor}}/topics"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 FR-02 Study material (Tutor)",
+      "description": "FR-02. Uploading publishes MaterialAdded to tutor.materials; Planner counts it.",
+      "item": [
+        {
+          "name": "Upload lecture notes (.md)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.test('text extracted', () => pm.expect(j.characters).to.be.above(500));",
+                  "  set('materialId', j.materialId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "sample-material.md"
+                },
+                {
+                  "key": "title",
+                  "type": "text",
+                  "value": "Week 5 lecture notes"
+                }
+              ]
+            },
+            "url": "{{tutor}}/topics/{{topicId}}/materials"
+          }
+        },
+        {
+          "name": "Upload to an unknown topic → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "sample-material.md"
+                }
+              ]
+            },
+            "url": "{{tutor}}/topics/00000000-0000-0000-0000-000000000000/materials"
+          }
+        },
+        {
+          "name": "List materials (no content)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('one material, no content in the list (AC6)', () => {",
+                  "    pm.expect(j).to.have.length(1);",
+                  "    pm.expect(j[0]).to.not.have.property('content');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{tutor}}/topics/{{topicId}}/materials"
+          }
+        },
+        {
+          "name": "Read material (full text)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('full text', () => pm.expect(j.content).to.include('base case'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{tutor}}/materials/{{materialId}}"
+          }
+        },
+        {
+          "name": "Another student reads it → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              }
+            ],
+            "url": "{{tutor}}/materials/{{materialId}}"
+          }
+        },
+        {
+          "name": "Planner counts it (MaterialAdded)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Wait for Kafka to deliver the event first.",
+                  "setTimeout(() => {}, 2000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('materialCount 1 (AC8)', () => pm.expect(j.topics.find(t => t.name === 'Recursion').materialCount).to.eql(1));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/courses/{{courseId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 FR-03 Weekly availability (Planner)",
+      "description": "FR-03. Sydney wall-clock times.",
+      "item": [
+        {
+          "name": "Monday 09:00–12:00",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"day\": \"MONDAY\",\n  \"start\": \"09:00\",\n  \"end\": \"12:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/availability/slots"
+          }
+        },
+        {
+          "name": "Wednesday 14:00–16:00",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"day\": \"WEDNESDAY\",\n  \"start\": \"14:00\",\n  \"end\": \"16:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/availability/slots"
+          }
+        },
+        {
+          "name": "Friday 10:00–11:30",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"day\": \"FRIDAY\",\n  \"start\": \"10:00\",\n  \"end\": \"11:30\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/availability/slots"
+          }
+        },
+        {
+          "name": "Overlapping slot → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"day\": \"MONDAY\",\n  \"start\": \"11:00\",\n  \"end\": \"13:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/availability/slots"
+          }
+        },
+        {
+          "name": "Shorter than 25 minutes → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"day\": \"TUESDAY\",\n  \"start\": \"09:00\",\n  \"end\": \"09:20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/availability/slots"
+          }
+        },
+        {
+          "name": "Touching slot is allowed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  set('slotId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"day\": \"MONDAY\",\n  \"start\": \"12:00\",\n  \"end\": \"12:30\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/availability/slots"
+          }
+        },
+        {
+          "name": "Remove that slot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/availability/slots/{{slotId}}"
+          }
+        },
+        {
+          "name": "List availability",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('3 slots', () => pm.expect(j.slots).to.have.length(3));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/availability"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 FR-11 Goals and values (Planner)",
+      "description": "FR-11. Reminders (FR-12) quote these.",
+      "item": [
+        {
+          "name": "Create goal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  set('goalId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Pass CSCI318 with a distinction\",\n  \"why\": \"I want to prove to myself that I can finish what I start.\",\n  \"targetDate\": \"{{targetDate}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/goals"
+          }
+        },
+        {
+          "name": "Create goal without a target date",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  set('goal2Id', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Read one chapter a week\",\n  \"why\": \"Small steps add up and keep me calm before exams.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/goals"
+          }
+        },
+        {
+          "name": "Target date in the past → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Too late\",\n  \"why\": \"Testing\",\n  \"targetDate\": \"{{yesterday}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/goals"
+          }
+        },
+        {
+          "name": "Create value statement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Learning is how I take care of my future self.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/values"
+          }
+        },
+        {
+          "name": "Value over 280 characters → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"{{longText}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/values"
+          }
+        },
+        {
+          "name": "Mark goal achieved",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('achievedAt recorded (AC4)', () => pm.expect(j.achievedAt).to.be.a('string'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/goals/{{goal2Id}}/achieve"
+          }
+        },
+        {
+          "name": "Achieve it again → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/goals/{{goal2Id}}/achieve"
+          }
+        },
+        {
+          "name": "List goals",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('2 goals', () => pm.expect(j).to.have.length(2));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/goals"
+          }
+        },
+        {
+          "name": "List values",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('1 value', () => pm.expect(j).to.have.length(1));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/values"
+          }
+        },
+        {
+          "name": "Another student deletes the goal → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              }
+            ],
+            "url": "{{planner}}/goals/{{goal2Id}}"
+          }
+        },
+        {
+          "name": "Delete the achieved goal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/goals/{{goal2Id}}"
+          }
+        },
+        {
+          "name": "One goal is left",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('1 goal (AC6)', () => pm.expect(j).to.have.length(1));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/goals"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 FR-05 Focus sessions (Focus)",
+      "description": "FR-05. Start/end publish FocusSessionStarted/Ended to focus.sessions (Social logs them).",
+      "item": [
+        {
+          "name": "Planned minutes out of range → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plannedMinutes\": 5,\n  \"allowedSites\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{focus}}/sessions"
+          }
+        },
+        {
+          "name": "Start session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.test('active, sites cleaned to hosts', () => {",
+                  "    pm.expect(j.status).to.eql('ACTIVE');",
+                  "    pm.expect(j.allowedSites).to.eql(['docs.oracle.com', 'google.com']);",
+                  "  });",
+                  "  set('sessionId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topicId\": \"{{topicId}}\",\n  \"plannedMinutes\": 25,\n  \"allowedSites\": [\n    \"https://www.google.com/search\",\n    \"docs.oracle.com\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{focus}}/sessions"
+          }
+        },
+        {
+          "name": "Second active session → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plannedMinutes\": 25,\n  \"allowedSites\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{focus}}/sessions"
+          }
+        },
+        {
+          "name": "Another student ends it → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              }
+            ],
+            "url": "{{focus}}/sessions/{{sessionId}}/end"
+          }
+        },
+        {
+          "name": "End session (after 3 s)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "setTimeout(() => {}, 3000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('ended with an actual duration (AC3, AC5)', () => {",
+                  "    pm.expect(j.status).to.eql('ENDED');",
+                  "    pm.expect(j.actualDuration).to.match(/^\\d+m \\d+s$/);",
+                  "    pm.expect(j.actualSeconds).to.be.at.least(3);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{focus}}/sessions/{{sessionId}}/end"
+          }
+        },
+        {
+          "name": "End it again → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{focus}}/sessions/{{sessionId}}/end"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6 FR-08 Friends, rooms, sharing (Social)",
+      "description": "FR-08. Any non-blank user ID is a user.",
+      "item": [
+        {
+          "name": "Friend request to yourself → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"toUserId\": \"{{bob}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{social}}/friends/requests"
+          }
+        },
+        {
+          "name": "Bob sends Alice a friend request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  set('requestId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"toUserId\": \"{{alice}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{social}}/friends/requests"
+          }
+        },
+        {
+          "name": "Request back while one is pending → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"toUserId\": \"{{bob}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{social}}/friends/requests"
+          }
+        },
+        {
+          "name": "Sender cannot accept → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              }
+            ],
+            "url": "{{social}}/friends/requests/{{requestId}}/accept"
+          }
+        },
+        {
+          "name": "Alice sees the request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('pending request listed', () => pm.expect(j.map(x => x.id)).to.include(pm.collectionVariables.get('requestId')));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{social}}/friends/requests"
+          }
+        },
+        {
+          "name": "Alice accepts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('accepted', () => pm.expect(j.status).to.eql('ACCEPTED'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{social}}/friends/requests/{{requestId}}/accept"
+          }
+        },
+        {
+          "name": "Accept again → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{social}}/friends/requests/{{requestId}}/accept"
+          }
+        },
+        {
+          "name": "Bob's friends",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('Alice is a friend', () => pm.expect(j.friends).to.eql([pm.collectionVariables.get('alice')]));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              }
+            ],
+            "url": "{{social}}/friends"
+          }
+        },
+        {
+          "name": "Sharing is off by default",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('false (AC3)', () => pm.expect(j.sharing).to.eql(false));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{social}}/sharing"
+          }
+        },
+        {
+          "name": "Alice turns sharing on",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('true', () => pm.expect(j.sharing).to.eql(true));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sharing\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{social}}/sharing"
+          }
+        },
+        {
+          "name": "Alice creates a study room",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.test('creator is the first member', () => pm.expect(j.members).to.eql([pm.collectionVariables.get('alice')]));",
+                  "  set('roomId', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"CSCI318 study group\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{social}}/rooms"
+          }
+        },
+        {
+          "name": "Bob joins the room",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('2 members', () => pm.expect(j.members).to.have.length(2));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              }
+            ],
+            "url": "{{social}}/rooms/{{roomId}}/join"
+          }
+        },
+        {
+          "name": "Join again → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              }
+            ],
+            "url": "{{social}}/rooms/{{roomId}}/join"
+          }
+        }
+      ]
+    },
+    {
+      "name": "7 FR-09 Studying now (Social, Kafka Streams)",
+      "description": "FR-09. Social aggregates focus.sessions into a presence store and queries it.",
+      "item": [
+        {
+          "name": "Alice starts a session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  set('session2Id', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topicId\": \"{{topicId}}\",\n  \"plannedMinutes\": 30,\n  \"allowedSites\": [\n    \"oracle.com\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{focus}}/sessions"
+          }
+        },
+        {
+          "name": "Bob sees Alice studying",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Wait for Kafka to deliver the event first.",
+                  "setTimeout(() => {}, 3000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('Alice listed with topic and elapsed time (AC1, AC8)', () => {",
+                  "    pm.expect(j.friendsStudying).to.have.length(1);",
+                  "    pm.expect(j.friendsStudying[0].userId).to.eql(pm.collectionVariables.get('alice'));",
+                  "    pm.expect(j.friendsStudying[0].topicId).to.eql(pm.collectionVariables.get('topicId'));",
+                  "    pm.expect(j.friendsStudying[0].elapsed).to.match(/^\\d+m \\d+s$/);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              }
+            ],
+            "url": "{{social}}/friends/studying-now"
+          }
+        },
+        {
+          "name": "Room count",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('1 of 2 studying (AC2)', () => pm.expect([j.studyingCount, j.memberCount]).to.eql([1, 2]));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              }
+            ],
+            "url": "{{social}}/rooms/{{roomId}}/studying-now"
+          }
+        },
+        {
+          "name": "Alice turns sharing off",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sharing\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{social}}/sharing"
+          }
+        },
+        {
+          "name": "Bob no longer sees her",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('hidden at once (AC5)', () => pm.expect(j.friendsStudying).to.eql([]));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              }
+            ],
+            "url": "{{social}}/friends/studying-now"
+          }
+        },
+        {
+          "name": "Room count still includes her",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('anonymous count (AC6)', () => pm.expect(j.studyingCount).to.eql(1));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              }
+            ],
+            "url": "{{social}}/rooms/{{roomId}}/studying-now"
+          }
+        },
+        {
+          "name": "Alice turns sharing back on",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sharing\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{social}}/sharing"
+          }
+        },
+        {
+          "name": "Non-member asks for the room → 404",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('outsider', pm.collectionVariables.get('alice') + '-outsider');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{outsider}}"
+              }
+            ],
+            "url": "{{social}}/rooms/{{roomId}}/studying-now"
+          }
+        }
+      ]
+    },
+    {
+      "name": "8 FR-06 + FR-12 Distractions and spike reminder (Focus → Planner)",
+      "description": "FR-06, FR-12 AC1/AC2/AC6. 3 distractions in one 30-minute window → DistractionSpikeDetected on focus.alerts → Planner reminder quoting a goal or value.",
+      "item": [
+        {
+          "name": "Log a phone distraction (type is case-insensitive)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.test('PHONE, not off-policy', () => pm.expect([j.type, j.offPolicy]).to.eql(['PHONE', false]));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"phone\",\n  \"note\": \"Checked a notification\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{focus}}/sessions/{{session2Id}}/distractions"
+          }
+        },
+        {
+          "name": "Log a site that is not allowed → off-policy",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.test('host youtube.com, off-policy (AC3, AC7)', () => pm.expect([j.site, j.offPolicy]).to.eql(['youtube.com', true]));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"OTHER_SITE\",\n  \"site\": \"https://www.youtube.com/watch?v=abc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{focus}}/sessions/{{session2Id}}/distractions"
+          }
+        },
+        {
+          "name": "Unknown type → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"DAYDREAM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{focus}}/sessions/{{session2Id}}/distractions"
+          }
+        },
+        {
+          "name": "Log a subdomain of an allowed site → on-policy",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.test('docs.oracle.com allowed by oracle.com (AC7)', () => pm.expect(j.offPolicy).to.eql(false));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"other_site\",\n  \"site\": \"docs.oracle.com/en/java\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{focus}}/sessions/{{session2Id}}/distractions"
+          }
+        },
+        {
+          "name": "Session lists its distractions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('3 distractions (AC8)', () => pm.expect(j.distractions).to.have.length(3));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{focus}}/sessions/{{session2Id}}"
+          }
+        },
+        {
+          "name": "Spike reminder arrived (Planner)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Wait for Kafka to deliver the event first.",
+                  "setTimeout(() => {}, 4000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('one DISTRACTION_SPIKE reminder (FR-12 AC1, AC2)', () => {",
+                  "    pm.expect(j.map(x => x.kind)).to.eql(['DISTRACTION_SPIKE']);",
+                  "  });",
+                  "  console.log('Reminder:', j[0] && j[0].message);",
+                  "  set('reminderId', j[0] && j[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/reminders"
+          }
+        },
+        {
+          "name": "Mark it read",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('readAt recorded', () => pm.expect(j.readAt).to.be.a('string'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/reminders/{{reminderId}}/read"
+          }
+        },
+        {
+          "name": "Mark it read again → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/reminders/{{reminderId}}/read"
+          }
+        },
+        {
+          "name": "End the session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{focus}}/sessions/{{session2Id}}/end"
+          }
+        },
+        {
+          "name": "Distraction in an ended session → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"THOUGHT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{focus}}/sessions/{{session2Id}}/distractions"
+          }
+        }
+      ]
+    },
+    {
+      "name": "9 FR-10 Progress and streak (Focus, Kafka Streams)",
+      "description": "FR-10. Daily totals from FocusSessionEnded, Sydney days.",
+      "item": [
+        {
+          "name": "Alice's progress",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Wait for Kafka to deliver the event first.",
+                  "setTimeout(() => {}, 5000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('today counts both ended sessions; 7 days; no streak yet', () => {",
+                  "    pm.expect(j.today.seconds).to.be.at.least(3);",
+                  "    pm.expect(j.today.focus).to.match(/^\\d+m \\d+s$/);",
+                  "    pm.expect(j.last7Days).to.have.length(7);",
+                  "    pm.expect(j.streakDays).to.eql(0);",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{focus}}/progress/{{alice}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 FR-07 Socratic tutor (Tutor, needs LLM_API_KEY)",
+      "description": "FR-07. The tutor's words change every run, so these checks look at status and state, not text. Read each \"reply\" in the response body. Tool calls (and refusals) are logged by tutor-service.",
+      "item": [
+        {
+          "name": "Ask a question",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.test('active, no attempts yet, a guiding reply (AC2)', () => {",
+                  "    pm.expect([j.status, j.attempts, j.solutionRevealed]).to.eql(['ACTIVE', 0, false]);",
+                  "    pm.expect(j.reply).to.be.a('string').and.not.empty;",
+                  "  });",
+                  "  console.log('Tutor:', j.reply);",
+                  "  set('tutoringId', j.sessionId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topicId\": \"{{topicId}}\",\n  \"question\": \"How do I write a recursive method that sums the numbers in a list?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{tutor}}/tutoring-sessions"
+          }
+        },
+        {
+          "name": "Attempt 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  console.log('Tutor:', j.reply, '| attempts:', j.attempts);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"My idea: loop over the list with a for loop and add each number to a total.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{tutor}}/tutoring-sessions/{{tutoringId}}/messages"
+          }
+        },
+        {
+          "name": "Attempt 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  console.log('Tutor:', j.reply, '| attempts:', j.attempts);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Recursively then: sum(list) = first element + sum(rest of the list), and the empty list returns 0.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{tutor}}/tutoring-sessions/{{tutoringId}}/messages"
+          }
+        },
+        {
+          "name": "Ask for the full solution",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  console.log('Tutor:', j.reply, '| attempts:', j.attempts, '| solution revealed:', j.solutionRevealed);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Can you show me the full solution now?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{tutor}}/tutoring-sessions/{{tutoringId}}/messages"
+          }
+        },
+        {
+          "name": "End: tutor asks a check question",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('CHECKING (AC10)', () => pm.expect(j.status).to.eql('CHECKING'));",
+                  "  console.log('Check question:', j.reply);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{tutor}}/tutoring-sessions/{{tutoringId}}/end"
+          }
+        },
+        {
+          "name": "Answer the check question",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('graded 1–5 and ended, or still CHECKING (AC5, AC10)', () => {",
+                  "    if (j.status === 'ENDED') pm.expect(j.understandingLevel).to.be.within(1, 5);",
+                  "    else pm.expect(j.status).to.eql('CHECKING');",
+                  "  });",
+                  "  console.log('Tutor:', j.reply, '| status:', j.status, '| level:', j.understandingLevel);",
+                  "  if (j.status === 'ENDED') set('tutorLevel', j.understandingLevel);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"The base case is the empty list, which returns 0. Without it the method calls itself forever and Java throws a StackOverflowError. Each call works on a shorter list, so it reaches the base case.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{tutor}}/tutoring-sessions/{{tutoringId}}/messages"
+          }
+        },
+        {
+          "name": "Session with transcript",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('transcript kept', () => pm.expect(j.transcript.length).to.be.at.least(10));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{tutor}}/tutoring-sessions/{{tutoringId}}"
+          }
+        },
+        {
+          "name": "Planner has the level (UnderstandingRecorded)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Wait for Kafka to deliver the event first.",
+                  "setTimeout(() => {}, 2000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  const level = pm.collectionVariables.get('tutorLevel');",
+                  "  const topic = j.topics.find(t => t.name === 'Recursion');",
+                  "  if (level) pm.test('understandingLevel from Tutor (AC14)', () => pm.expect(topic.understandingLevel).to.eql(Number(level)));",
+                  "  else console.log('Session still CHECKING: answer the check question again, then rerun this request.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/courses/{{courseId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 FR-04 + FR-12 Weekly plan and time blocks (Planner, needs LLM_API_KEY)",
+      "description": "FR-04, FR-12 AC3. The agent reads deadlines, availability, topics (ranked in code) and Focus progress through tools; every block rule is checked in StudyPlan. Tool calls and refusals are logged by planner-service.",
+      "item": [
+        {
+          "name": "Week start not a Monday → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weekStart\": \"{{nextTuesday}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/plans"
+          }
+        },
+        {
+          "name": "Week already ended → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weekStart\": \"{{endedMonday}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/plans"
+          }
+        },
+        {
+          "name": "Bob has no availability or topics → 400 (no LLM call)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{bob}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weekStart\": \"{{nextMonday}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/plans"
+          }
+        },
+        {
+          "name": "Generate next week's plan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.test('blocks follow the rules (AC3, AC5, AC10)', () => {",
+                  "    pm.expect(j.blocks).to.not.be.empty;",
+                  "    j.blocks.forEach(b => {",
+                  "      pm.expect(b.minutes).to.be.within(25, 90);",
+                  "      pm.expect(['MONDAY', 'WEDNESDAY', 'FRIDAY']).to.include(b.day);",
+                  "      pm.expect(b.rationale).to.not.be.empty;",
+                  "      pm.expect(b.status).to.eql('PLANNED');",
+                  "    });",
+                  "  });",
+                  "  j.blocks.forEach(b => console.log(b.day, b.start + '-' + b.end, b.topicName, '|', b.rationale));",
+                  "  console.log('Summary:', j.summary, '| shortfall:', j.shortfall);",
+                  "  set('blockId', j.blocks[0].id);",
+                  "  set('blockTopicId', j.blocks[0].topicId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weekStart\": \"{{nextMonday}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/plans"
+          }
+        },
+        {
+          "name": "Same week again without replace → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 409', () => pm.response.to.have.status(409));",
+                  "if (pm.response.code === 409) {",
+                  "  pm.test('tells the student to send replace: true (AC8)', () => pm.expect(j.message).to.include('replace'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"weekStart\": \"{{nextMonday}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{planner}}/plans"
+          }
+        },
+        {
+          "name": "Get the plan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('same plan', () => pm.expect(j.blocks[0].id).to.eql(pm.collectionVariables.get('blockId')));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/plans/{{nextMonday}}"
+          }
+        },
+        {
+          "name": "Focus session for the first block",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const set = (k, v) => pm.collectionVariables.set(k, v);",
+                  "pm.test('status 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  set('session3Id', j.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timeBlockId\": \"{{blockId}}\",\n  \"topicId\": \"{{blockTopicId}}\",\n  \"plannedMinutes\": 25,\n  \"allowedSites\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{focus}}/sessions"
+          }
+        },
+        {
+          "name": "End it",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "setTimeout(() => {}, 2000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{focus}}/sessions/{{session3Id}}/end"
+          }
+        },
+        {
+          "name": "Block is COMPLETED (FocusSessionEnded)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Wait for Kafka to deliver the event first.",
+                  "setTimeout(() => {}, 3000);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('status 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('first block COMPLETED (FR-12 AC3)', () => pm.expect(j.blocks.find(b => b.id === pm.collectionVariables.get('blockId')).status).to.eql('COMPLETED'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{alice}}"
+              }
+            ],
+            "url": "{{planner}}/plans/{{nextMonday}}"
+          }
+        }
+      ]
+    }
+  ]
+}

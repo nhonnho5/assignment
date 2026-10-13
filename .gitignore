@@ -13,7 +13,6 @@ target/
 # Secrets — LLM_API_KEY lives here, never commit it
 .env
 .env.*
-!.env.example
 
 # Subject's project specification (UOW document) — kept locally, not committed
 docs/CSCI318 Project Specification*.pdf
