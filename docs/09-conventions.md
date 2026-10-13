@@ -16,7 +16,7 @@ Only the dependencies above, plus `spring-boot-starter-test`. **Any other depend
 | `spring-cloud-stream-binder-kafka-streams` | ⚠ Part of Spring Cloud Stream, but **confirm with coordinator** before relying on it (needed for FR-09, FR-10, FR-12) |
 | Lombok | ✗ Not used — Java records replace it |
 | `spring-boot-starter-validation` | ✗ Not used — invariants are enforced in domain code |
-| LLM provider module (e.g. `langchain4j-open-ai`) | Part of LangChain4j — see open decision below |
+| `langchain4j-google-ai-gemini` | ✓ LLM provider module, part of LangChain4j *(decided 2026-10-13)* |
 
 ## Repository layout
 ```
@@ -54,6 +54,9 @@ Dependencies point inward: `presentation → service → domain ← infrastructu
 - *Pragmatic choice:* JPA annotations are allowed on domain classes to keep the code small. (Trade-off to discuss in the report.)
 - **Controllers contain no business logic.**
 - IDs are `UUID`. The current user comes from the `X-User-Id` header.
+- **Errors** *(decided 2026-10-13)*: `DomainException` → 400; its subclass `NotFoundException` → 404; its subclass `ConflictException` → 409. Each service has one `@RestControllerAdvice` in `presentation` that does this mapping.
+- **Time** *(decided 2026-10-13)*: instants are stored in UTC. Anything that depends on "which day" (streaks, daily minutes, week starts) uses the zone `Australia/Sydney`, defined once as a constant per service.
+- **Scheduling** *(decided 2026-10-13)*: Spring `@Scheduled` (part of Spring, no extra dependency) is used for time-triggered jobs, e.g. FR-12 missed blocks.
 
 ## Kafka
 - Spring Cloud Stream functional style: `Consumer<...>` / `Function<...>` beans for consuming; `StreamBridge` for publishing.
@@ -70,6 +73,6 @@ Dependencies point inward: `presentation → service → domain ← infrastructu
 - Domain unit tests are named after the FR and rule, e.g. `FR05_cannotStartSecondActiveSession`.
 
 ## Open decisions (author to decide)
-- [ ] **LLM provider:** e.g. OpenAI (paid, cheap small models, very reliable tool calling), Google Gemini (has a free tier), or Ollama (free, runs locally, needs a capable laptop; tool-calling quality varies by model).
+- [x] **LLM provider:** Google Gemini (free tier) via LangChain4j; key in `LLM_API_KEY`. *(decided 2026-10-13)*
 - [ ] Confirm Kafka Streams binder with the coordinator.
 - [ ] Final application name.

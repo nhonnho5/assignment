@@ -4,9 +4,10 @@ Single source of truth for where the build is. Claude ticks items when a step is
 
 ## Before coding
 - [x] Git repo, `.gitignore`, `.gitattributes`, `.claude/` settings, hooks and skills
-- [ ] Decide LLM provider (`09-conventions.md` open decision)
-- [ ] Confirm `spring-cloud-stream-binder-kafka-streams` with coordinator (blocks steps 3, 4, 7)
-- [ ] Grill session: resolve open questions below and write answers into docs
+- [x] Decide LLM provider — Google Gemini
+- [ ] **Confirm `spring-cloud-stream-binder-kafka-streams` with coordinator** (blocks steps 3, 4, 7 — user must ask)
+- [x] Grill session 1: six open questions resolved and written into `02-requirements.md` / `09-conventions.md`
+- [ ] Get a Gemini API key (aistudio.google.com) and put it in `.env` as `LLM_API_KEY` (needed by step 8)
 
 ## Build order (from CLAUDE.md)
 - [ ] 1. Skeleton — parent pom, 4 modules on 8081–8084, docker-compose Kafka
@@ -20,10 +21,5 @@ Single source of truth for where the build is. Claude ticks items when a step is
 - [ ] 9. FR-04 planning agent
 - [ ] 10. Postman collection + README
 
-## Open questions (to resolve in a grill session)
-1. FR-10 streaks: what time zone defines a "day" — UTC or Australia/Sydney?
-2. FR-12.3 missed block: is `@Scheduled` (part of Spring, no new dependency) the trigger?
-3. `DomainException` → HTTP status: how to tell 400 vs 404 vs 409?
-4. Planner consumes `FocusSessionEnded` "to mark time blocks completed" — no FR covers it. Add an acceptance criterion or drop it?
-5. FR-09: sharing settings live in Social's DB, presence in a Streams store — filter at query time?
-6. FR-04: is a week start always a Monday?
+## Open questions
+None right now. Run `/grill-me` before each slice to catch new ones.

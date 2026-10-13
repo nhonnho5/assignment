@@ -51,7 +51,7 @@
 **Story:** As a student, I want the system to build my week's study time blocks for me, so I don't get stuck deciding what to study.
 **Relevance:** O1 — removes the planning step that ADHD makes hardest.
 **Acceptance criteria**
-1. A student can request a plan for a given week start date.
+1. A student can request a plan for a given week start date, which must be a Monday (otherwise 400). *(decided 2026-10-13)*
 2. The planning agent uses tools to read: deadlines, availability, topic understanding levels, and recent focus statistics (via a REST call to the Focus service).
 3. Time blocks are created only inside availability slots, are 25–90 minutes long, and have at least 10 minutes between consecutive blocks.
 4. Topics with nearer, heavier deadlines and lower understanding levels are prioritised.
@@ -103,16 +103,16 @@
 2. A student can see how many members of a study room are currently studying.
 3. The board reflects session start/end within a few seconds.
 4. Implemented as a Kafka Streams stateful aggregation over `focus.sessions`, queried via interactive queries.
-5. Users with sharing off never appear.
+5. Users with sharing off never appear. Presence is stored for every user; the sharing filter is applied at query time against Social's `SharingSetting`, so turning sharing off takes effect immediately. *(decided 2026-10-13)*
 
 ## FR-10 — Real-time focus progress and streak (Stream processing)
 **Story:** As a student, I want to see my focus minutes today, this week and my streak, so I can see that I'm improving.
 **Relevance:** O3 — visible progress reinforces habit.
 **Acceptance criteria**
 1. A student can view focus minutes for today and for each of the last 7 days.
-2. A student can view their current streak (consecutive days with ≥ 25 focus minutes).
+2. A student can view their current streak (consecutive days with ≥ 25 focus minutes). A "day" is a calendar day in `Australia/Sydney`. *(decided 2026-10-13)*
 3. Values update within a few seconds of a session ending.
-4. Implemented as a Kafka Streams windowed aggregation (1-day windows) over `FocusSessionEnded` events.
+4. Implemented as a Kafka Streams windowed aggregation (1-day windows aligned to `Australia/Sydney` midnight) over `FocusSessionEnded` events.
 
 ## FR-11 — Personal goals and value statements
 **Story:** As a student, I want to write down my goals and the ideas that matter to me, so the system can remind me why I'm studying.
@@ -127,10 +127,11 @@
 **Acceptance criteria**
 1. When a student logs ≥ 3 distractions within a 30-minute window, the Focus service's stream processor publishes `DistractionSpikeDetected` once for that window.
 2. On `DistractionSpikeDetected`, the Planner creates a reminder that quotes one of the student's goals or value statements.
-3. When a scheduled time block ends with no focus session linked to it, the Planner creates a "missed block" reminder.
-4. Optionally, random reminders are created at a configurable frequency (max N per day).
-5. A student can list unread reminders and mark them read.
-6. *(Stretch)* the reminder text is phrased by the LLM in an encouraging tone, using the student's own words.
+3. When the Planner consumes a `FocusSessionEnded` with a `timeBlockId`, that time block is marked completed. *(decided 2026-10-13)*
+4. When a scheduled time block ends and is not completed, the Planner creates a "missed block" reminder, once per block. Detected by a Spring `@Scheduled` job that runs every minute. *(decided 2026-10-13)*
+5. Optionally, random reminders are created at a configurable frequency (max N per day).
+6. A student can list unread reminders and mark them read.
+7. *(Stretch)* the reminder text is phrased by the LLM in an encouraging tone, using the student's own words.
 
 ---
 
