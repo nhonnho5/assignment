@@ -50,4 +50,5 @@ None right now. Run `/grill-me` before each slice to catch new ones.
   - README sample inputs.
   - LangChain4j dependency (comes with step 8).
   - Fill in the "My rationale" column in `docs/ai-log/`. The report itself must be written by the user, not by AI.
-- [ ] **After step 5 is committed:** remind the user to set up a remote and push (added 2026-10-14). The repo has no remote yet. The user creates a private GitHub/GitLab repo and sends the URL; then either Claude adds `origin` and pushes (after the user approves changing the "never `git push`" rule in `CLAUDE.md`), or the user runs `git remote add origin <url>` and `git push -u origin main`.
+- [x] Remote `origin` = https://github.com/nhonnho5/assignment.git added 2026-10-14; the user pushes (Claude never pushes).
+- [x] ~~**After step 5 is committed:** remind the user to set up a remote and push (added 2026-10-14). The repo has no remote yet. The user creates a private GitHub/GitLab repo and sends the URL; then either Claude adds `origin` and pushes (after the user approves changing the "never `git push`" rule in `CLAUDE.md`), or the user runs `git remote add origin <url>` and `git push -u origin main`.~~
