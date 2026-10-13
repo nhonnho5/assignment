@@ -23,6 +23,7 @@ If code and docs disagree, the docs win. If the docs are unclear or contradictor
 - No business logic in controllers. Invariants live in the domain.
 - Agent business rules are enforced in tool code, not only in prompts.
 - Reference FR IDs in Javadoc and commit messages.
+- Keep code short, efficient and easy to read: a simple function is a few lines, no boilerplate, no unused helpers or getters, shared checks written once.
 - Work in small steps. After each step: the build passes, the services start, and the user is told how to test the step with curl or Postman.
 - Test first for domain rules: write a failing JUnit test (named `FRxx_rule`) before the code that satisfies it. Agent tool rules are unit-tested without calling the LLM.
 - Never read `.env`. Never `git push` — the user pushes.
@@ -50,3 +51,13 @@ If code and docs disagree, the docs win. If the docs are unclear or contradictor
 ## After each step, also
 - Add a short note to `docs/ai-log/` if the user accepted, changed or rejected something you proposed (the user writes the rationale).
 - Explain the new classes in plain language: which layer each is in and why, and which DDD pattern it uses. The user is new to Java and must be able to explain the code.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as local markdown files under `.scratch/<feature>/`. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context: one glossary (`docs/01-domain.md` §6) and one ADR folder (`docs/adr/`). See `docs/agents/domain.md`.
