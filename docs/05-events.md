@@ -69,6 +69,7 @@
 | timeBlockId | UUID, nullable |
 | topicId | UUID, nullable |
 | actualSeconds | long — exact duration in whole seconds *(decided 2026-10-13, replaces `actualMinutes`)* |
+| startedAt | instant — FR-10 counts the session toward its start day *(decided 2026-10-13)* |
 | endedAt | instant |
 
 ### DistractionLogged — FR-06
@@ -98,6 +99,7 @@
   "timeBlockId": null,
   "topicId": "c0ffee00-0000-4000-8000-000000000001",
   "actualSeconds": 2715,
+  "startedAt": "2026-10-14T02:54:45Z",
   "endedAt": "2026-10-14T03:40:00Z"
 }
 ```

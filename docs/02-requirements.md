@@ -113,10 +113,15 @@
 **Story:** As a student, I want to see my focus minutes today, this week and my streak, so I can see that I'm improving.
 **Relevance:** O3 — visible progress reinforces habit.
 **Acceptance criteria**
-1. A student can view focus minutes for today and for each of the last 7 days.
+1. A student can view focus minutes for today and for each of the last 7 days. Each day is shown as minutes and seconds (e.g. `24m 59s`, same format as FR-05) plus the total in seconds. "Last 7 days" are the seven Sydney days ending today. *(decided 2026-10-13)*
 2. A student can view their current streak (consecutive days with ≥ 25 focus minutes). A "day" is a calendar day in `Australia/Sydney`. *(decided 2026-10-13)*
 3. Values update within a few seconds of a session ending.
 4. Implemented as a Kafka Streams windowed aggregation (1-day windows aligned to `Australia/Sydney` midnight) over `FocusSessionEnded` events.
+5. A session's whole duration counts toward the Sydney day on which it **started** (event time = `startedAt`), even if it ends after midnight. *(decided 2026-10-13)*
+6. A `FocusSessionEnded` that arrives more than 1 day after the end of its start day (grace period) is not counted. *(decided 2026-10-13)*
+7. The streak counts back from today if today already has ≥ 25 minutes, otherwise from yesterday. Today does not break the streak until the day is over. The streak has no fixed cap; it is limited only by how long the state store keeps daily totals (retention 10 years). *(decided 2026-10-13)*
+8. `GET /progress/{userId}` takes the user from the path and does not check `X-User-Id`, because the Planner service calls it on the student's behalf. *(decided 2026-10-13)*
+9. Stream logic is unit-tested via pure domain classes (day bucketing, streak); the topology itself is verified end to end with curl. `kafka-streams-test-utils` is not used because it is not an approved dependency. *(decided 2026-10-13)*
 
 ## FR-11 — Personal goals and value statements
 **Story:** As a student, I want to write down my goals and the ideas that matter to me, so the system can remind me why I'm studying.

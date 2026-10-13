@@ -80,6 +80,16 @@ class FocusSessionTest {
     }
 
     @Test
+    void FR10_endedEventCarriesStartedAt() {
+        FocusSession session = startSession(25);
+        session.pullDomainEvents();
+        session.end(START.plusSeconds(1500));
+
+        FocusSessionEnded ended = (FocusSessionEnded) session.pullDomainEvents().get(0);
+        assertThat(ended.startedAt()).isEqualTo(START);
+    }
+
+    @Test
     void FR05_cannotEndTwice() {
         FocusSession session = startSession(25);
         session.end(START.plusSeconds(60));

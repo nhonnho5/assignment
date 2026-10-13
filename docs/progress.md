@@ -12,7 +12,7 @@ Single source of truth for where the build is. Claude ticks items when a step is
 ## Build order (from CLAUDE.md)
 - [x] 1. Skeleton — parent pom, 4 modules on 8081–8084, docker-compose Kafka
 - [x] 2. Slice A — FR-05 focus sessions → `focus.sessions` → Social logs
-- [ ] 3. FR-10 progress stream + `GET /progress/{userId}`
+- [x] 3. FR-10 progress stream + `GET /progress/{userId}`
 - [ ] 4. FR-08, FR-09 social + presence store
 - [ ] 5. FR-01, FR-03, FR-11 planner + `TopicCreated` → Tutor
 - [ ] 6. FR-02 materials + `MaterialAdded` → Planner

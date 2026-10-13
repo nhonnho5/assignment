@@ -3,7 +3,10 @@ package com.studyanchor.focus.domain;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Implements FR-05. Published to {@code focus.sessions} when a session ends. */
+/**
+ * Implements FR-05 and FR-10. Published to {@code focus.sessions} when a session ends.
+ * {@code startedAt} lets the FR-10 stream count the session toward its start day.
+ */
 public record FocusSessionEnded(
         UUID eventId,
         String eventType,
@@ -13,6 +16,7 @@ public record FocusSessionEnded(
         UUID timeBlockId,
         UUID topicId,
         long actualSeconds,
+        Instant startedAt,
         Instant endedAt) implements DomainEvent {
 
     public static final String TYPE = "FocusSessionEnded";
@@ -20,6 +24,6 @@ public record FocusSessionEnded(
     static FocusSessionEnded of(FocusSession session) {
         return new FocusSessionEnded(UUID.randomUUID(), TYPE, session.endedAt(), session.userId(),
                 session.id(), session.timeBlockId(), session.topicId(),
-                session.actualDuration().toSeconds(), session.endedAt());
+                session.actualDuration().toSeconds(), session.startedAt(), session.endedAt());
     }
 }

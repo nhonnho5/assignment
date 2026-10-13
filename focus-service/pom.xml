@@ -13,6 +13,14 @@
     <artifactId>focus-service</artifactId>
     <name>Focus Service</name>
 
+    <dependencies>
+        <!-- Approved by coordinator 2026-10-13 (docs/09-conventions.md); FR-10 and FR-12 streams -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-stream-binder-kafka-streams</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>
