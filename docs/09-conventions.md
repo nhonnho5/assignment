@@ -63,6 +63,7 @@ Dependencies point inward: `presentation → service → domain ← infrastructu
 - Spring Cloud Stream functional style: `Consumer<...>` / `Function<...>` beans for consuming; `StreamBridge` for publishing.
 - Topics and keys exactly as in `05-events.md`.
 - Bootstrap server: `localhost:9092`.
+- Kafka 4 brokers reject records timestamped more than 1 hour in the future. A Kafka Streams store whose event time is shifted ahead (FR-10's Sydney timeline) sets `message.timestamp.after.max.ms` on its changelog topic. *(found and fixed 2026-10-14)*
 
 ## LLM
 - API key from environment variable `LLM_API_KEY`; never commit keys.

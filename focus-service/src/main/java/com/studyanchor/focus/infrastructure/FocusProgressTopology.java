@@ -1,5 +1,6 @@
 package com.studyanchor.focus.infrastructure;
 
+import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.kstream.Grouped;
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -29,6 +31,13 @@ class FocusProgressTopology {
     /** FR-10 AC7: how long daily totals are kept; this is the only limit on the streak. */
     static final Duration RETENTION = Duration.ofDays(3650);
 
+    /**
+     * The Sydney timeline runs up to 11 hours ahead of real time, but Kafka 4 brokers reject records more than
+     * 1 hour in the future by default. The store's changelog topic is created allowing up to 1 day ahead.
+     */
+    static final Map<String, String> CHANGELOG_CONFIG =
+            Map.of(TopicConfig.MESSAGE_TIMESTAMP_AFTER_MAX_MS_CONFIG, String.valueOf(Duration.ofDays(1).toMillis()));
+
     @Bean
     SydneyDayTimestampExtractor sydneyDayTimestampExtractor() {
         return new SydneyDayTimestampExtractor();
@@ -45,6 +54,7 @@ class FocusProgressTopology {
                         Materialized.<String, Long, WindowStore<Bytes, byte[]>>as(STORE)
                                 .withKeySerde(Serdes.String())
                                 .withValueSerde(Serdes.Long())
-                                .withRetention(RETENTION));
+                                .withRetention(RETENTION)
+                                .withLoggingEnabled(CHANGELOG_CONFIG));
     }
 }
