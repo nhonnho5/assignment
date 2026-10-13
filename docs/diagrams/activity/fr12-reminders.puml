@@ -1,0 +1,51 @@
+@startuml fr12-reminders
+' Origin: drafted with AI assistance (Claude Code) from FR-12 in docs/02-requirements.md; reviewed by the author.
+title FR-12 Contextual goal reminders (stream processing trigger)
+|Focus streams|
+|Planner|
+|Student|
+|Focus streams|
+start
+split
+  :Consume DistractionLogged (focus.distractions);
+  :Group by userId, 30-minute tumbling windows\naligned to the clock (event time = loggedAt);
+  :Count distractions (distraction-spike-store);
+  if (count = 3 exactly?) then (yes)
+    :Publish **DistractionSpikeDetected** → focus.alerts\n(once per window);
+    |Planner|
+    :Consume DistractionSpikeDetected;
+    if (reminder for this window exists?\n(triggerKey spike:<windowStart>)) then (yes)
+      :Ignore duplicate;
+      stop
+    else (no)
+      :Create DISTRACTION_SPIKE reminder;
+    endif
+  else (no)
+    |Focus streams|
+    :Nothing;
+    stop
+  endif
+split again
+  |Planner|
+  :MissedBlockScheduler runs every minute;
+  :Find blocks still PLANNED whose end has passed;
+  :Mark each MISSED;
+  :Create one MISSED_BLOCK reminder per block\n(triggerKey missed:<blockId>);
+end split
+|Planner|
+if (student has not-achieved goals or values?) then (yes)
+  :Quote one at random in the message;
+else (no)
+  :General encouragement + tip to add a goal;
+endif
+|Student|
+:GET /reminders (unread, newest first);
+:POST /reminders/{id}/read;
+|Planner|
+if (already read?) then (yes)
+  :409;
+else (no)
+  :Record readAt;
+endif
+stop
+@enduml

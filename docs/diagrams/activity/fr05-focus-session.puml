@@ -1,0 +1,52 @@
+@startuml fr05-focus-session
+' Origin: drafted with AI assistance (Claude Code) from FR-05 in docs/02-requirements.md; reviewed by the author.
+title FR-05 Start and end a focus session
+|Student|
+start
+:POST /sessions {plannedMinutes, allowedSites,\noptional timeBlockId, topicId};
+|Focus|
+if (plannedMinutes 10–180?) then (no)
+  :400;
+  stop
+elseif (student already has an active session?) then (yes)
+  :409;
+  stop
+else (ok)
+  :Create FocusSession (allowed sites cleaned to hosts);
+  :Save, publish **FocusSessionStarted** → focus.sessions;
+  :201;
+endif
+fork
+  |Social|
+  :Presence stream: student is studying (FR-09);
+fork again
+  |Planner|
+  :Block PLANNED → STARTED (if timeBlockId, FR-12);
+end fork
+|Student|
+:Study…;
+:POST /sessions/{id}/end;
+|Focus|
+if (session is the student's?) then (no)
+  :404;
+  stop
+elseif (already ended?) then (yes)
+  :409;
+  stop
+else (no)
+  :Record end; actual duration = end − start\n(minutes and seconds);
+  :Save, publish **FocusSessionEnded** → focus.sessions;
+  :200 (e.g. "25m 59s");
+endif
+fork
+  |Social|
+  :Presence removed (FR-09);
+fork again
+  |Focus|
+  :Progress stream adds the minutes (FR-10);
+fork again
+  |Planner|
+  :Block → COMPLETED (if timeBlockId, FR-12);
+end fork
+stop
+@enduml

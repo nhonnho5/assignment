@@ -1,0 +1,33 @@
+@startuml fr09-studying-now
+' Origin: drafted with AI assistance (Claude Code) from FR-09 in docs/02-requirements.md; reviewed by the author.
+title FR-09 Live "studying now" board (stream processing)
+|Focus|
+start
+:Publish FocusSessionStarted / Ended\n→ focus.sessions (key = userId);
+|Social streams|
+:Consume focus.sessions;
+if (event type?) then (Started)
+  :Upsert Presence(userId, sessionId,\ntopicId, startedAt) in presence-store;
+else (Ended)
+  :Tombstone: delete userId from presence-store;
+endif
+|Student (viewer)|
+:GET /friends/studying-now\nor GET /rooms/{id}/studying-now;
+|Social|
+if (friends board?) then (yes)
+  :Load accepted friends;
+  :Interactive query: presence of each friend;
+  :Keep only friends whose sharing is ON\n(checked now, against SharingSetting);
+  :Elapsed = now − startedAt ("12m 5s" + seconds);
+  :200 list (userId, topicId, elapsed);
+else (room count)
+  if (viewer is a room member?) then (no)
+    :404;
+    stop
+  endif
+  :Interactive query: presence of every member;
+  :Count them, whatever their sharing setting\n(anonymous number);
+  :200 {studyingCount, memberCount};
+endif
+stop
+@enduml

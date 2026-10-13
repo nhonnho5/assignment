@@ -1,0 +1,76 @@
+@startuml architecture
+' Origin: drafted with AI assistance (Claude Code) from docs/03-bounded-contexts.md and docs/05-events.md; reviewed by the author.
+title StudyAnchor — microservice architecture
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+actor "Student\n(Postman / curl)" as Student
+cloud "Google Gemini API" as Gemini
+
+node "planner-service :8081" as Planner {
+  component "REST API\n/courses /availability /goals /values\n/plans /reminders" as PApi
+  component "Planning agent\n(LangChain4j + tools)" as PAgent
+  component "MissedBlockScheduler\n(@Scheduled 1 min)" as PSched
+  database "H2 planner" as PDb
+}
+node "tutor-service :8082" as Tutor {
+  component "REST API\n/topics /materials\n/tutoring-sessions" as TApi
+  component "Socratic tutor agent\n(LangChain4j + tools)" as TAgent
+  database "H2 tutor" as TDb
+}
+node "focus-service :8083" as Focus {
+  component "REST API\n/sessions /progress" as FApi
+  component "Kafka Streams\nfocus-progress (1-day windows)\ndistraction-spikes (30-min windows)" as FStreams
+  database "H2 focus" as FDb
+}
+node "social-service :8084" as Social {
+  component "REST API\n/friends /rooms /sharing\n/studying-now" as SApi
+  component "Kafka Streams\npresence (KTable)" as SStreams
+  database "H2 social" as SDb
+}
+
+queue "Apache Kafka (KRaft)" as Kafka {
+  queue "planner.topics" as tTopics
+  queue "tutor.materials" as tMaterials
+  queue "tutor.understanding" as tUnder
+  queue "focus.sessions" as tSessions
+  queue "focus.distractions" as tDistr
+  queue "focus.alerts" as tAlerts
+}
+
+Student --> PApi : HTTP + X-User-Id
+Student --> TApi : HTTP
+Student --> FApi : HTTP
+Student --> SApi : HTTP
+
+PAgent --> Gemini : HTTPS
+TAgent --> Gemini : HTTPS
+PAgent --> FApi : REST GET /progress/{userId}
+
+PApi --> PDb
+TApi --> TDb
+FApi --> FDb
+SApi --> SDb
+
+PApi --> tTopics : TopicCreated / TopicDeleted
+tTopics --> TApi
+TApi --> tMaterials : MaterialAdded
+tMaterials --> PApi
+TAgent --> tUnder : UnderstandingRecorded
+tUnder --> PApi
+FApi --> tSessions : FocusSessionStarted / Ended
+tSessions --> FStreams
+tSessions --> SStreams
+tSessions --> PApi : time block status
+FApi --> tDistr : DistractionLogged
+tDistr --> FStreams
+FStreams --> tAlerts : DistractionSpikeDetected
+tAlerts --> PApi
+PSched --> PDb : mark MISSED blocks
+
+legend right
+  Solid arrows into a topic = publish, out of a topic = consume.
+  Each service owns its own H2 database; no shared code or data.
+  Stream state is queried with interactive queries (FR-09, FR-10).
+endlegend
+@enduml

@@ -1,0 +1,65 @@
+@startuml use-cases
+' Origin: drafted with AI assistance (Claude Code) from docs/02-requirements.md; reviewed by the author.
+title StudyAnchor — use cases (FR-01..FR-12)
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor<<AI>> #FFF2CC
+  BackgroundColor<<Stream>> #DDEBF7
+}
+
+actor Student
+actor "Study friend /\nroom member" as Friend
+actor "LLM (Gemini)" as LLM <<system>>
+actor "Clock\n(@Scheduled, every minute)" as Clock <<system>>
+
+rectangle "Planner service" {
+  usecase "FR-01 Manage courses,\ntopics and deadlines" as UC1
+  usecase "FR-03 Set weekly availability" as UC3
+  usecase "FR-04 Generate weekly\nstudy plan" as UC4 <<AI>>
+  usecase "FR-11 Manage goals and\nvalue statements" as UC11
+  usecase "FR-12 Read and dismiss\ngoal reminders" as UC12 <<Stream>>
+}
+rectangle "Tutor service" {
+  usecase "FR-02 Add study material" as UC2
+  usecase "FR-07 Learn with the\nSocratic tutor" as UC7 <<AI>>
+}
+rectangle "Focus service" {
+  usecase "FR-05 Start / end a\nfocus session" as UC5
+  usecase "FR-06 Log a distraction" as UC6
+  usecase "FR-10 View focus\nprogress and streak" as UC10 <<Stream>>
+}
+rectangle "Social service" {
+  usecase "FR-08 Friends, study rooms,\nsharing setting" as UC8
+  usecase "FR-09 See who is\nstudying now" as UC9 <<Stream>>
+}
+
+Student --> UC1
+Student --> UC2
+Student --> UC3
+Student --> UC4
+Student --> UC5
+Student --> UC6
+Student --> UC7
+Student --> UC10
+Student --> UC11
+Student --> UC12
+Student --> UC8
+Student --> UC9
+Friend --> UC8
+Friend --> UC9
+
+UC4 --> LLM
+UC7 --> LLM
+Clock --> UC12
+
+UC2 ..> UC1 : <<include>>\n(topic must exist)
+UC4 ..> UC1 : <<include>>\n(deadlines, topics)
+UC4 ..> UC3 : <<include>>\n(slots)
+UC6 ..> UC5 : <<include>>\n(active session)
+UC12 ..> UC11 : <<include>>\n(quotes a goal)
+
+legend right
+  yellow = agentic AI, blue = stream processing
+endlegend
+@enduml

@@ -84,13 +84,13 @@ None right now. Run `/grill-me` before each slice to catch new ones.
 - [x] Lightweight client: Postman collection that seeds data and exercises every FR
 - [x] AI-use record: `docs/ai-log/`, `CLAUDE.md`, `.claude/skills/`
 
-**Missing repo artefacts (AI-assisted allowed, origin must be labelled)**
-- [ ] Use case diagram(s) + one UML activity diagram per FR (Report §2.1)
-- [ ] UML domain model diagram, classes grouped into sub-domains (§2.4)
-- [ ] Architecture diagram: services, REST vs Kafka, data flows (§3.1)
-- [ ] Layered architecture diagram per service, mapped to packages (§3.2)
-- [ ] Database design (tables per service) (§3.4)
-- [ ] Stream processing queries written out (SQL-like) next to the topology code (§3.5)
+**Repo artefacts for the report (AI-assisted, origin labelled) — drafted 2026-10-14, PlantUML in `docs/diagrams/` + PNGs; the user still reviews them**
+- [x] Use case diagram + one UML activity diagram per FR (Report §2.1) — `docs/diagrams/`
+- [x] UML domain model diagram, classes grouped into sub-domains (§2.4)
+- [x] Architecture diagram: services, REST vs Kafka, data flows (§3.1)
+- [x] Layered architecture diagram per service, mapped to packages (§3.2)
+- [x] Database design (tables per service) (§3.4)
+- [x] Stream processing queries written out (SQL-like) (§3.5) — `docs/06-stream-queries.md`
 
 **User only (must not be AI-generated)**
 - [ ] "My rationale" column in every `docs/ai-log/` file

@@ -1,0 +1,46 @@
+@startuml fr04-weekly-plan
+' Origin: drafted with AI assistance (Claude Code) from FR-04 in docs/02-requirements.md; reviewed by the author.
+title FR-04 AI-generated weekly study plan (agentic AI)
+|Student|
+start
+:POST /plans {weekStart, replace};
+|Planner|
+if (weekStart is a Monday and the week is not over?) then (no)
+  :400;
+  stop
+elseif (has availability slots and topics?) then (no)
+  :400 (before any LLM call);
+  stop
+elseif (week already planned and replace ≠ true?) then (yes)
+  :409 "send replace: true";
+  stop
+else (ok)
+endif
+:Create empty StudyPlan;
+|Planning agent (LLM)|
+:Receive goal: plan this week;
+repeat
+  :Call a tool: getDeadlines, getAvailability,\ngetTopics (with priority), getFocusStats;
+  if (getFocusStats?) then (yes)
+    |Focus|
+    :GET /progress/{userId};
+    |Planning agent (LLM)|
+  endif
+  :Propose blocks with addBlocks(list)\nor reportInsufficientTime(reason);
+  |Planner|
+  :StudyPlan checks every rule in code:\ninside one slot, 25–90 min, ≥ 10 min gap,\nin this week, not in the past;
+  :Accepted blocks are added;\nbroken rules return "REFUSED: …";
+  |Planning agent (LLM)|
+repeat while (more to plan or refusals to fix?) is (yes)
+->no;
+:Write the plan summary;
+|Planner|
+if (LLM failed (quota, network, key)?) then (yes)
+  :503, nothing saved;
+  stop
+else (no)
+  :Save StudyPlan with TimeBlocks (PLANNED);
+  :201 plan (blocks + rationale, shortfall if any);
+endif
+stop
+@enduml

@@ -1,0 +1,24 @@
+@startuml fr10-progress-streak
+' Origin: drafted with AI assistance (Claude Code) from FR-10 in docs/02-requirements.md; reviewed by the author.
+title FR-10 Real-time focus progress and streak (stream processing)
+|Focus|
+start
+:Publish FocusSessionEnded → focus.sessions;
+|Focus streams|
+:Keep only FocusSessionEnded events;
+:Event time = startedAt, shifted to the Sydney day;
+:Group by userId, 1-day tumbling windows\n(grace 1 day: later events are dropped);
+:Sum actualSeconds → focus-progress-store;
+|Student|
+:GET /progress/{userId};
+|Focus|
+:Interactive query: daily totals for the last 7 Sydney days\n(+ earlier days for the streak);
+:FocusProgress: today, last 7 days ("24m 59s" + seconds);
+if (today ≥ 25 minutes?) then (yes)
+  :Count streak back from today;
+else (no)
+  :Count streak back from yesterday;
+endif
+:200 {today, last7Days, streakDays};
+stop
+@enduml

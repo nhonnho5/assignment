@@ -1,0 +1,57 @@
+@startuml layers
+' Origin: drafted with AI assistance (Claude Code) from the package structure of each service; reviewed by the author.
+title StudyAnchor — layered architecture per service (packages com.studyanchor.<service>.*)
+skinparam packageStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<presentation>> #DDEBF7
+  BackgroundColor<<service>> #E2EFDA
+  BackgroundColor<<domain>> #FCE4D6
+  BackgroundColor<<infrastructure>> #EEEEEE
+}
+
+package "planner-service" {
+  rectangle "presentation\n--\nCourseController, AvailabilityController,\nMotivationController, StudyPlanController,\nReminderController, PlannerDtos,\nApiExceptionHandler" as PP <<presentation>>
+  rectangle "service\n--\nCourseService, AvailabilityService,\nMotivationService, StudyPlanService,\nReminderService" as PS <<service>>
+  rectangle "domain\n--\nCourse, Topic, Deadline, WeeklyAvailability,\nStudyPlan, TimeBlock, Goal, ValueStatement, Reminder,\nCourseCode, Weight, TopicPriority, TopicCreated/Deleted,\nports: *Repository, EventPublisher, PlanningAgent" as PD <<domain>>
+  rectangle "infrastructure\n--\nJpa*RepositoryAdapter + SpringData*Repository,\nStreamBridgeEventPublisher, *Consumer (Kafka),\nGeminiPlanningAgent + PlanningTools,\nFocusProgressClient (REST), MissedBlockScheduler" as PI <<infrastructure>>
+  PP -down-> PS
+  PS -down-> PD
+  PI -up-> PD : implements ports
+}
+
+package "tutor-service" {
+  rectangle "presentation\n--\nMaterialController, TopicController,\nTutoringController, ApiExceptionHandler" as TP <<presentation>>
+  rectangle "service\n--\nMaterialService, TopicCatalogService,\nTutoringService" as TS <<service>>
+  rectangle "domain\n--\nMaterial, TutoringSession, Message,\nTopicReference, MaterialSearch,\nMaterialAdded, UnderstandingRecorded,\nports: *Repository, EventPublisher,\nTutorAgent, MaterialText" as TD <<domain>>
+  rectangle "infrastructure\n--\nJpa*RepositoryAdapter + SpringData*Repository,\nStreamBridgeEventPublisher, PlannerTopicsConsumer,\nGeminiTutorAgent + TutoringTools,\nUploadedFileText (PDFBox)" as TI <<infrastructure>>
+  TP -down-> TS
+  TS -down-> TD
+  TI -up-> TD : implements ports
+}
+
+package "focus-service" {
+  rectangle "presentation\n--\nFocusSessionController, ProgressController,\nrequest/response records, ApiExceptionHandler" as FP <<presentation>>
+  rectangle "service\n--\nFocusSessionService,\nFocusProgressService" as FS <<service>>
+  rectangle "domain\n--\nFocusSession, Distraction, PlannedMinutes, Site,\nFocusProgress, DailyFocus, FocusSessionStarted/Ended,\nDistractionLogged, DistractionSpikeDetected,\nports: FocusSessionRepository, EventPublisher, FocusHistory" as FD <<domain>>
+  rectangle "infrastructure\n--\nJpaFocusSessionRepositoryAdapter,\nStreamBridgeEventPublisher,\nFocusProgressTopology, DistractionSpikeTopology,\nKafkaStreamsFocusHistory (interactive query)" as FI <<infrastructure>>
+  FP -down-> FS
+  FS -down-> FD
+  FI -up-> FD : implements ports
+}
+
+package "social-service" {
+  rectangle "presentation\n--\nFriendController, StudyRoomController,\nSharingController, StudyingNowController,\nSocialDtos, ApiExceptionHandler" as SP <<presentation>>
+  rectangle "service\n--\nFriendshipService, StudyRoomService,\nSharingService, StudyingNowService" as SS <<service>>
+  rectangle "domain\n--\nFriendship, StudyRoom, RoomName,\nSharingSetting, Presence, StudyingNow,\nports: *Repository, PresenceBoard" as SD <<domain>>
+  rectangle "infrastructure\n--\nJpa*RepositoryAdapter + SpringData*Repository,\nPresenceTopology,\nKafkaStreamsPresenceBoard (interactive query)" as SI <<infrastructure>>
+  SP -down-> SS
+  SS -down-> SD
+  SI -up-> SD : implements ports
+}
+
+legend bottom
+  Dependencies point inward: presentation → service → domain ← infrastructure.
+  The domain layer is plain Java and defines interfaces (ports) that infrastructure implements,
+  so domain rules can be unit-tested without Spring, Kafka, a database or the LLM.
+endlegend
+@enduml

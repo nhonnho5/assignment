@@ -1,0 +1,56 @@
+@startuml fr07-socratic-tutor
+' Origin: drafted with AI assistance (Claude Code) from FR-07 in docs/02-requirements.md; reviewed by the author.
+title FR-07 Socratic AI tutor (agentic AI)
+|Student|
+start
+:POST /tutoring-sessions {topicId, question};
+|Tutor|
+if (topic known and the student's,\nquestion 1–2,000 characters?) then (no)
+  :400 / 404;
+  stop
+endif
+:Create TutoringSession (ACTIVE);
+repeat
+  |Tutor agent (LLM)|
+  :Read transcript + 3 closest material paragraphs\n(searchMaterial tool for more);
+  if (student message is a real try?) then (yes)
+    :recordAttempt (max 1 per message);
+  endif
+  if (student asks for the solution?) then (yes)
+    :call revealSolution;
+    |Tutor|
+    if (≥ 2 attempts recorded?) then (yes)
+      :Separate solver LLM call\nreturns the full solution;
+    else (no)
+      :"REFUSED: …" → agent gives another hint;
+    endif
+    |Tutor agent (LLM)|
+  endif
+  :Reply with a guiding question or hint;
+  |Tutor|
+  :Save messages (on LLM failure: 503, nothing saved);
+  |Student|
+  :POST /tutoring-sessions/{id}/messages {text};
+repeat while (keep learning?) is (yes)
+->no;
+:POST /tutoring-sessions/{id}/end;
+|Tutor|
+:ACTIVE → CHECKING;
+|Tutor agent (LLM)|
+:Ask a check-understanding question;
+|Student|
+:Answer the check question;
+|Tutor agent (LLM)|
+:recordUnderstanding(level 1–5);
+|Tutor|
+if (student answered the check question?) then (yes)
+  :Session ENDED, level saved;
+  :Publish **UnderstandingRecorded** → tutor.understanding;
+else (no)
+  :"REFUSED" → stays CHECKING;
+  stop
+endif
+|Planner|
+:Topic keeps the latest understanding level\n(used to prioritise topics in FR-04);
+stop
+@enduml

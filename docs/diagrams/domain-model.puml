@@ -1,0 +1,254 @@
+@startuml domain-model
+' Origin: drafted with AI assistance (Claude Code) from the domain packages of the four services; reviewed by the author.
+title StudyAnchor — domain model (grouped by sub-domain / bounded context)
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor<<Aggregate Root>> #FCE4D6
+  BackgroundColor<<Entity>> #FFF2CC
+  BackgroundColor<<Value Object>> #E2EFDA
+  BackgroundColor<<Domain Event>> #DDEBF7
+  BackgroundColor<<Domain Service>> #EDE7F6
+  BackgroundColor<<Read Model>> #EEEEEE
+}
+
+package "Planner context" {
+  package "Study planning" {
+    class Course <<Aggregate Root>> {
+      id : UUID
+      userId : String
+      name : String
+    }
+    class CourseCode <<Value Object>> {
+      value : String
+    }
+    class Topic <<Entity>> {
+      id : UUID
+      name : String
+      materialIds : Set<UUID>
+      understandingLevel : Integer [0..1]
+    }
+    class Deadline <<Entity>> {
+      id : UUID
+      title : String
+      dueAt : Instant
+      topicIds : Set<UUID>
+    }
+    class Weight <<Value Object>> {
+      value : int [1–100]
+    }
+    class WeeklyAvailability <<Aggregate Root>> {
+      userId : String
+    }
+    class AvailabilitySlot <<Entity>> {
+      id : UUID
+      day : DayOfWeek
+      start : LocalTime
+      end : LocalTime
+    }
+    class StudyPlan <<Aggregate Root>> {
+      id : UUID
+      userId : String
+      weekStart : LocalDate
+      summary : String
+      shortfall : String [0..1]
+      addBlock(...)
+      reportShortfall(...)
+      sessionStarted() / sessionEnded()
+      markMissed(now)
+    }
+    class TimeBlock <<Entity>> {
+      id : UUID
+      topicId : UUID
+      topicName : String
+      courseCode : String
+      startsAt : Instant
+      endsAt : Instant
+      rationale : String
+      status : PLANNED | STARTED | COMPLETED | MISSED
+    }
+    class TopicPriority <<Domain Service>> {
+      rank(topics, deadlines, today)
+    }
+    class TopicCreated <<Domain Event>>
+    class TopicDeleted <<Domain Event>>
+  }
+  package "Motivation" {
+    class Goal <<Aggregate Root>> {
+      id : UUID
+      userId : String
+      title : String
+      why : String
+      targetDate : LocalDate [0..1]
+      achievedAt : Instant [0..1]
+      achieve()
+      quote()
+    }
+    class ValueStatement <<Aggregate Root>> {
+      id : UUID
+      userId : String
+      text : String [≤ 280]
+      quote()
+    }
+    class Reminder <<Aggregate Root>> {
+      id : UUID
+      userId : String
+      kind : DISTRACTION_SPIKE | MISSED_BLOCK
+      message : String
+      triggerKey : String
+      readAt : Instant [0..1]
+    }
+  }
+}
+
+package "Tutor context (Learning)" {
+  class TopicReference <<Read Model>> {
+    topicId : UUID
+    userId : String
+    courseCode : String
+    topicName : String
+  }
+  class Material <<Aggregate Root>> {
+    id : UUID
+    userId : String
+    topicId : UUID
+    title : String
+    content : String [≤ 50,000]
+  }
+  class TutoringSession <<Aggregate Root>> {
+    id : UUID
+    userId : String
+    topicId : UUID
+    status : ACTIVE | CHECKING | ENDED
+    solutionRevealed : boolean
+    level : Integer [0..1]
+    recordAttempt()
+    revealSolution()
+    recordUnderstanding(level)
+  }
+  class Message <<Value Object>> {
+    fromStudent : boolean
+    text : String
+    attempt : boolean
+    sentAt : Instant
+  }
+  class MaterialSearch <<Domain Service>> {
+    search(materials, query)
+  }
+  class MaterialAdded <<Domain Event>>
+  class UnderstandingRecorded <<Domain Event>>
+}
+
+package "Focus context (Focus tracking)" {
+  class FocusSession <<Aggregate Root>> {
+    id : UUID
+    userId : String
+    timeBlockId : UUID [0..1]
+    topicId : UUID [0..1]
+    allowedSites : Set<String>
+    startedAt : Instant
+    endedAt : Instant [0..1]
+    actualSeconds : Long [0..1]
+    end()
+    logDistraction(...)
+  }
+  class PlannedMinutes <<Value Object>> {
+    value : int [10–180]
+  }
+  class Distraction <<Value Object>> {
+    type : DistractionType
+    site : String [0..1]
+    note : String [0..1]
+    offPolicy : boolean
+    loggedAt : Instant
+  }
+  class Site <<Value Object>> {
+    host : String
+  }
+  class FocusProgress <<Value Object>> {
+    days : List<DailyFocus>
+    streakDays : int
+  }
+  class FocusSessionStarted <<Domain Event>>
+  class FocusSessionEnded <<Domain Event>>
+  class DistractionLogged <<Domain Event>>
+  class DistractionSpikeDetected <<Domain Event>>
+}
+
+package "Social context (Social accountability)" {
+  class Friendship <<Aggregate Root>> {
+    id : UUID
+    requesterId : String
+    recipientId : String
+    status : PENDING | ACCEPTED
+    accept(by)
+  }
+  class StudyRoom <<Aggregate Root>> {
+    id : UUID
+    createdBy : String
+    members : Set<String>
+    join(userId)
+  }
+  class RoomName <<Value Object>> {
+    value : String [1–60]
+  }
+  class SharingSetting <<Aggregate Root>> {
+    userId : String
+    sharing : boolean = false
+  }
+  class Presence <<Read Model>> {
+    userId : String
+    sessionId : UUID
+    topicId : UUID [0..1]
+    startedAt : Instant
+  }
+  class StudyingNow <<Domain Service>> {
+    friendsStudying(...)
+    countStudying(...)
+  }
+}
+
+Course *-- "1" CourseCode
+Course *-- "0..*" Topic
+Course *-- "0..*" Deadline
+Deadline *-- "1" Weight
+Deadline ..> "1..*" Topic : topicIds
+WeeklyAvailability *-- "0..*" AvailabilitySlot
+StudyPlan *-- "0..*" TimeBlock
+TimeBlock ..> Topic : topicId (copy of name)
+StudyPlan ..> TopicPriority : ranks topics
+Course ..> TopicCreated : registers
+Course ..> TopicDeleted : registers
+Reminder ..> Goal : quotes
+Reminder ..> ValueStatement : quotes
+Reminder ..> TimeBlock : missed block
+
+Material ..> TopicReference : topicId
+TutoringSession ..> TopicReference : topicId
+TutoringSession *-- "0..*" Message
+TutoringSession ..> MaterialSearch
+Material ..> MaterialAdded : registers
+TutoringSession ..> UnderstandingRecorded : registers
+
+FocusSession *-- "1" PlannedMinutes
+FocusSession *-- "0..*" Distraction
+Distraction ..> Site
+FocusSession ..> FocusSessionStarted : registers
+FocusSession ..> FocusSessionEnded : registers
+FocusSession ..> DistractionLogged : registers
+
+StudyRoom *-- "1" RoomName
+StudyingNow ..> Presence
+StudyingNow ..> SharingSetting
+StudyingNow ..> Friendship
+
+' Cross-context links travel only as events (published language), never as object references
+TopicCreated ..> TopicReference : builds (Kafka)
+MaterialAdded ..> Topic : materialIds (Kafka)
+UnderstandingRecorded ..> Topic : understandingLevel (Kafka)
+FocusSessionEnded ..> TimeBlock : COMPLETED (Kafka)
+FocusSessionStarted ..> Presence : builds (Kafka Streams)
+DistractionLogged ..> DistractionSpikeDetected : ≥ 3 in 30 min (Kafka Streams)
+DistractionSpikeDetected ..> Reminder : creates (Kafka)
+FocusSessionEnded ..> FocusProgress : daily totals (Kafka Streams)
+@enduml

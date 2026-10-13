@@ -1,0 +1,47 @@
+@startuml fr08-friends-rooms-sharing
+' Origin: drafted with AI assistance (Claude Code) from FR-08 in docs/02-requirements.md; reviewed by the author.
+title FR-08 Friends, study rooms and sharing settings
+|Student (Bob)|
+start
+:POST /friends/requests {toUserId: Alice};
+|Social|
+if (to yourself?) then (yes)
+  :400;
+  stop
+elseif (already friends or a request pending\nin either direction?) then (yes)
+  :409;
+  stop
+else (no)
+  :Create Friendship (PENDING);
+  :201;
+endif
+|Friend (Alice)|
+:GET /friends/requests;
+:POST /friends/requests/{id}/accept;
+|Social|
+if (Alice is the recipient?) then (no)
+  :404;
+  stop
+elseif (already accepted?) then (yes)
+  :409;
+  stop
+else (pending)
+  :Friendship ACCEPTED (mutual);
+endif
+|Friend (Alice)|
+:PUT /sharing {sharing: true}\n(default false);
+:POST /rooms {name};
+|Social|
+:Create StudyRoom, Alice is the first member;
+|Student (Bob)|
+:POST /rooms/{id}/join;
+|Social|
+if (room exists?) then (no)
+  :404;
+elseif (already a member?) then (yes)
+  :409;
+else (no)
+  :Add Bob as member;
+endif
+stop
+@enduml

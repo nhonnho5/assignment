@@ -1,0 +1,43 @@
+@startuml fr11-goals-values
+' Origin: drafted with AI assistance (Claude Code) from FR-11 in docs/02-requirements.md; reviewed by the author.
+title FR-11 Personal goals and value statements
+|Student|
+start
+split
+  :POST /goals {title, why, optional targetDate};
+  |Planner|
+  if (title 1–100, why 1–500,\ntargetDate not before today (Sydney)?) then (no)
+    :400;
+    stop
+  else (yes)
+    :Create Goal; 201;
+  endif
+  |Student|
+  :POST /goals/{id}/achieve;
+  |Planner|
+  if (goal is the student's?) then (no)
+    :404;
+    stop
+  elseif (already achieved?) then (yes)
+    :409;
+    stop
+  else (no)
+    :Record achievedAt;
+  endif
+split again
+  |Student|
+  :POST /values {text};
+  |Planner|
+  if (text 1–280 characters?) then (no)
+    :400;
+    stop
+  else (yes)
+    :Create ValueStatement; 201;
+  endif
+end split
+|Student|
+:GET /goals, GET /values, DELETE /goals/{id}, DELETE /values/{id};
+|Planner|
+:Not-achieved goals and values are\nquoted in reminders (FR-12);
+stop
+@enduml

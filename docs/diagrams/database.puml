@@ -1,0 +1,219 @@
+@startuml database
+' Origin: drafted with AI assistance (Claude Code) from the JPA mappings in each service's domain package; reviewed by the author.
+title StudyAnchor — database design (one H2 database per service, + Kafka Streams state stores)
+hide circle
+hide empty members
+skinparam linetype ortho
+skinparam class {
+  BackgroundColor<<store>> #DDEBF7
+}
+
+package "planner-service (H2)" {
+  entity course {
+    * id : UUID <<PK>>
+    --
+    * user_id : varchar
+    * code : varchar
+    * name : varchar
+  }
+  entity topic {
+    * id : UUID <<PK>>
+    --
+    * course_id : UUID <<FK>>
+    * name : varchar
+    understanding_level : int
+    understanding_recorded_at : timestamp
+  }
+  entity topic_material {
+    * topic_id : UUID <<FK>>
+    * material_id : UUID
+  }
+  entity deadline {
+    * id : UUID <<PK>>
+    --
+    * course_id : UUID <<FK>>
+    * title : varchar
+    * due_at : timestamp
+    * weight : int
+  }
+  entity deadline_topic {
+    * deadline_id : UUID <<FK>>
+    * topic_id : UUID
+  }
+  entity weekly_availability {
+    * user_id : varchar <<PK>>
+  }
+  entity availability_slot {
+    * id : UUID <<PK>>
+    --
+    * user_id : varchar <<FK>>
+    * day_of_week : varchar
+    * start_time : time
+    * end_time : time
+  }
+  entity study_plan {
+    * id : UUID <<PK>>
+    --
+    * user_id : varchar
+    * week_start : date
+    summary : varchar(4000)
+    shortfall : varchar(500)
+    .. unique (user_id, week_start) ..
+  }
+  entity time_block {
+    * id : UUID <<PK>>
+    --
+    * plan_id : UUID <<FK>>
+    * topic_id : UUID
+    * topic_name : varchar
+    * course_code : varchar
+    * starts_at : timestamp
+    * ends_at : timestamp
+    * rationale : varchar(200)
+    * status : varchar
+  }
+  entity goal {
+    * id : UUID <<PK>>
+    --
+    * user_id : varchar
+    * title : varchar
+    * why : varchar(500)
+    target_date : date
+    * created_at : timestamp
+    achieved_at : timestamp
+  }
+  entity value_statement {
+    * id : UUID <<PK>>
+    --
+    * user_id : varchar
+    * text : varchar(280)
+    * created_at : timestamp
+  }
+  entity reminder {
+    * id : UUID <<PK>>
+    --
+    * user_id : varchar
+    * kind : varchar
+    * message : varchar(1000)
+    * trigger_key : varchar
+    * created_at : timestamp
+    read_at : timestamp
+    .. unique (user_id, trigger_key) ..
+  }
+  course ||--o{ topic
+  course ||--o{ deadline
+  topic ||--o{ topic_material
+  deadline ||--|{ deadline_topic
+  weekly_availability ||--o{ availability_slot
+  study_plan ||--o{ time_block
+}
+
+package "tutor-service (H2)" {
+  entity topic_reference {
+    * topic_id : UUID <<PK>>
+    --
+    * user_id : varchar
+    * course_id : UUID
+    * course_code : varchar
+    * topic_name : varchar
+  }
+  entity material {
+    * id : UUID <<PK>>
+    --
+    * user_id : varchar
+    * topic_id : UUID
+    * title : varchar
+    * content : clob
+    * added_at : timestamp
+  }
+  entity tutoring_session {
+    * id : UUID <<PK>>
+    --
+    * user_id : varchar
+    * topic_id : UUID
+    * status : varchar
+    solution_revealed : boolean
+    level : int
+  }
+  entity tutoring_message {
+    * session_id : UUID <<FK>>
+    --
+    from_student : boolean
+    * text : clob
+    attempt : boolean
+    * sent_at : timestamp
+  }
+  topic_reference ||..o{ material : topic_id
+  topic_reference ||..o{ tutoring_session : topic_id
+  tutoring_session ||--o{ tutoring_message
+}
+
+package "focus-service (H2)" {
+  entity focus_session {
+    * id : UUID <<PK>>
+    --
+    * user_id : varchar
+    time_block_id : UUID
+    topic_id : UUID
+    * planned_minutes : int
+    * started_at : timestamp
+    ended_at : timestamp
+    actual_seconds : bigint
+  }
+  entity focus_session_allowed_site {
+    * session_id : UUID <<FK>>
+    * site : varchar
+  }
+  entity distraction {
+    * session_id : UUID <<FK>>
+    --
+    * distraction_type : varchar
+    site : varchar
+    note : varchar(500)
+    off_policy : boolean
+    * logged_at : timestamp
+  }
+  class "focus-progress-store\n(windowed: userId + Sydney day → seconds)" as fps <<store>>
+  class "distraction-spike-store\n(windowed: userId + 30 min → count)" as dss <<store>>
+  focus_session ||--o{ focus_session_allowed_site
+  focus_session ||--o{ distraction
+}
+
+package "social-service (H2)" {
+  entity friendship {
+    * id : UUID <<PK>>
+    --
+    * requester_id : varchar
+    * recipient_id : varchar
+    * status : varchar
+    * requested_at : timestamp
+    accepted_at : timestamp
+  }
+  entity sharing_setting {
+    * user_id : varchar <<PK>>
+    --
+    * sharing : boolean
+  }
+  entity study_room {
+    * id : UUID <<PK>>
+    --
+    * name : varchar
+    * created_by : varchar
+    * created_at : timestamp
+  }
+  entity study_room_member {
+    * room_id : UUID <<FK>>
+    * user_id : varchar
+  }
+  class "presence-store\n(key-value: userId → Presence)" as ps <<store>>
+  study_room ||--|{ study_room_member
+}
+
+legend right
+  Solid line = foreign key inside one database.
+  Dotted line = logical reference by ID (no foreign key).
+  IDs from other services (topic_id in focus, time_block_id, material_id)
+  are stored as plain values: no database is shared between services.
+  Blue = Kafka Streams state store (RocksDB, backed by a changelog topic).
+endlegend
+@enduml

@@ -1,0 +1,35 @@
+@startuml fr06-distraction
+' Origin: drafted with AI assistance (Claude Code) from FR-06 in docs/02-requirements.md; reviewed by the author.
+title FR-06 Log a distraction
+|Student|
+start
+:POST /sessions/{id}/distractions\n{type, optional site, optional note};
+|Focus|
+if (session exists and is the student's?) then (no)
+  :404;
+  stop
+elseif (session still active?) then (no)
+  :409;
+  stop
+elseif (type known (case-insensitive), site ≤ 200, note ≤ 500?) then (no)
+  :400;
+  stop
+else (ok)
+endif
+if (site given?) then (yes)
+  :Clean site to a host\n(no scheme, www., port, path);
+  if (host or a parent domain is allowed?) then (yes)
+    :offPolicy = false;
+  else (no)
+    :offPolicy = true;
+  endif
+else (no)
+  :offPolicy = false;
+endif
+:Add Distraction (time = server clock);
+:Save, publish **DistractionLogged** → focus.distractions\n(the note stays in Focus);
+:201;
+|Focus streams|
+:Count it in the spike window (FR-12);
+stop
+@enduml

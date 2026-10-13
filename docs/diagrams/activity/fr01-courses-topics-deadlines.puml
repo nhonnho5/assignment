@@ -1,0 +1,45 @@
+@startuml fr01-courses-topics-deadlines
+' Origin: drafted with AI assistance (Claude Code) from FR-01 in docs/02-requirements.md; reviewed by the author.
+title FR-01 Manage courses, topics and deadlines
+|Student|
+start
+:POST /courses {code, name};
+|Planner|
+if (code/name valid and code not used by this student?) then (yes)
+  :Create Course (code upper-cased);
+else (no)
+  :400 invalid / 409 duplicate code;
+  stop
+endif
+|Student|
+:POST /courses/{id}/topics {name};
+|Planner|
+if (course is the student's?) then (no)
+  :404;
+  stop
+endif
+if (topic name unique in course (ignoring case)?) then (yes)
+  :Add Topic to Course;
+  :Save, publish **TopicCreated** → planner.topics;
+else (no)
+  :409;
+  stop
+endif
+|Tutor|
+:Consume TopicCreated;
+:Save TopicReference (read model);
+|Student|
+:POST /courses/{id}/deadlines\n{title, dueAt (Sydney), weight, topicIds};
+|Planner|
+if (dueAt in the future, weight 1–100,\n≥ 1 topic of this course?) then (no)
+  :400;
+  stop
+elseif (total weight of course ≤ 100 %?) then (no)
+  :409;
+  stop
+else (yes)
+  :Add Deadline (dueAt stored as UTC);
+  :201 Created;
+endif
+stop
+@enduml

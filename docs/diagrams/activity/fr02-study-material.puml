@@ -1,0 +1,28 @@
+@startuml fr02-study-material
+' Origin: drafted with AI assistance (Claude Code) from FR-02 in docs/02-requirements.md; reviewed by the author.
+title FR-02 Add study material to a topic
+|Student|
+start
+:POST /topics/{topicId}/materials\n(multipart: file .txt/.md/.pdf, optional title);
+|Tutor|
+if (topic known to Tutor and owned by student?) then (no)
+  :404;
+  stop
+endif
+:Extract text (UTF-8, or PDFBox for .pdf);
+if (title 1–100 and text 1–50,000 characters?) then (no)
+  :400;
+  stop
+endif
+:Create Material (title defaults to file name);
+:Save, publish **MaterialAdded** → tutor.materials;
+:201 (id, title, characters, addedAt);
+|Planner|
+:Consume MaterialAdded;
+if (topic known and material not counted yet?) then (yes)
+  :Add material ID to Topic\n(materialCount in GET /courses/{id});
+else (no)
+  :Ignore;
+endif
+stop
+@enduml

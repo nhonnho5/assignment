@@ -1,0 +1,23 @@
+@startuml fr03-availability
+' Origin: drafted with AI assistance (Claude Code) from FR-03 in docs/02-requirements.md; reviewed by the author.
+title FR-03 Set weekly study availability
+|Student|
+start
+:POST /availability/slots {day, start, end};
+|Planner|
+:Load the student's WeeklyAvailability\n(create it if missing);
+if (whole minutes, end after start,\n≥ 25 minutes?) then (no)
+  :400;
+  stop
+elseif (overlaps a slot on the same day?\n(touching is allowed)) then (yes)
+  :409;
+  stop
+else (no)
+  :Add AvailabilitySlot;
+  :Save;
+  :201 (slot id);
+endif
+|Student|
+:GET /availability, or DELETE /availability/slots/{id};
+stop
+@enduml
