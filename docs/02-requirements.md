@@ -114,7 +114,7 @@
 5. Users with sharing off never appear. Presence is stored for every user; the sharing filter is applied at query time against Social's `SharingSetting`, so turning sharing off takes effect immediately. *(decided 2026-10-13)*
 6. The room count includes **every** member currently studying, whatever their sharing setting: it is an anonymous number, so no one "appears". *(decided 2026-10-14)*
 7. Only members of a room can see its count; non-members get 404. *(decided 2026-10-14)*
-8. Elapsed time is computed at query time from the session's `startedAt` and shown as minutes and seconds (`12m 05s`, same format as FR-05) plus the total in seconds. *(decided 2026-10-14)*
+8. Elapsed time is computed at query time from the session's `startedAt` and shown as minutes and seconds (`12m 5s`, same format as FR-05) plus the total in seconds. *(decided 2026-10-14)*
 9. The board shows the `topicId` (or null), not the topic name: Social does not consume `planner.topics`. *(decided 2026-10-14)*
 10. The viewer's own sharing setting does not limit what they can see; it only controls whether others see them. *(decided 2026-10-14)*
 

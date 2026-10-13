@@ -10,12 +10,16 @@ spring:
     open-in-view: false
   cloud:
     function:
-      definition: focusSessionEvents
+      definition: presence
     stream:
       kafka:
         binder:
           brokers: localhost:9092
+        streams:
+          binder:
+            brokers: localhost:9092
+            applicationId: social-presence
       bindings:
-        focusSessionEvents-in-0:
+        # FR-09: presence stream (picked up by the Kafka Streams binder because it is a KStream function)
+        presence-in-0:
           destination: focus.sessions
-          group: social-service
