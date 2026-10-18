@@ -36,7 +36,7 @@ Read first: [guide 02 §2.1–2.2](guide/02-big-picture.md), [01-domain.md](01-d
 
 ## Section 2. Analysis, Requirements and Domain Modeling
 ### 2.1 Functional requirements
-Read first: [02-requirements.md](02-requirements.md), guide 07 (coming).
+Read first: [02-requirements.md](02-requirements.md), [guide 07](guide/07-every-feature.md).
 - [ ] All 12 FRs as user stories (you may paste the story lines)
 - [ ] For each FR, 1–2 sentences: **which objective it serves and why**
 - [ ] Use case diagram: `docs/diagrams/png/use-cases.png`
@@ -98,7 +98,7 @@ Read first: [guide 06](guide/06-ai-agents.md).
 ### 4.1 Configuration and running
 - [ ] Summarise [guide 01](guide/01-run-it.md) (prerequisites, `.env`, `docker compose up -d`, `mvn package`, 4 `java -jar`), or paste it as an AI-assisted artefact
 ### 4.2 Input and output per user story
-- [ ] For **each** FR: one sample request (method, URL, body) and the real response. Take them from Postman (screenshots are fine) or README "Sample inputs"
+- [ ] For **each** FR: one sample request (method, URL, body) and the real response. Real ones are ready in [guide 07](guide/07-every-feature.md) (or take Postman screenshots)
 - [ ] Mention the Postman collection: 97 requests, 141 assertions, all passing
 
 ## Section 5. AI-driven development process

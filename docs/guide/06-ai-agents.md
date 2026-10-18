@@ -283,4 +283,4 @@ A 503 means the key is missing or the free quota is used up. Wait a minute and r
 
 ---
 
-**Next:** 07: Every feature (coming), one card per FR with endpoint, sample input and output, files and activity diagram.
+**Next:** [07: Every feature](07-every-feature.md), one card per FR with endpoint, sample input and output, files and activity diagram.
