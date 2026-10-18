@@ -307,4 +307,4 @@ Each service also has `DomainException` (→ 400), `ConflictException` (→ 409)
 
 ---
 
-**Next:** 05: Kafka and streams (coming) shows how events travel and how the three real-time streams work.
+**Next:** [05: Kafka and streams](05-kafka-and-streams.md) shows how events travel and how the three real-time streams work.

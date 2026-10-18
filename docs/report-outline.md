@@ -75,7 +75,7 @@ Read first: [guide 04](guide/04-ddd-patterns.md).
 - [ ] Data ownership table: paste from [03-bounded-contexts.md](03-bounded-contexts.md) "Data ownership"
 - [ ] One database per service; copies are kept via events, never shared tables
 ### 3.5 Event-driven architecture and stream processing
-Read first: guide 05 (coming), [06-stream-queries.md](06-stream-queries.md).
+Read first: [guide 05](guide/05-kafka-and-streams.md), [06-stream-queries.md](06-stream-queries.md).
 - [ ] Topic table (guide 02 §2.5) and the event envelope
 - [ ] Publishing snippet: `focus-service/…/infrastructure/StreamBridgeEventPublisher.java` lines 33–44
 - [ ] "Publish after save" snippet: `focus-service/…/service/FocusSessionService.java` lines 68–72
