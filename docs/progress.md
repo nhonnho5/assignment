@@ -68,11 +68,11 @@ Goals set by the user, in order. Claude ticks each item when it is done.
 **Goal 1: anyone can run it (IMPORTANT)**
 - [x] `docs/guide/01-run-it.md`: Windows step-by-step run guide, with expected output for each step
 - [x] Claude tested the guide from scratch (Kafka down → up, `mvn package` BUILD SUCCESS in 2:03, 4 services up, browser check, newman 97 requests / 141 assertions / 0 failed)
-- [ ] The user ran it alone with no AI and it worked
+- [ ] ~~The user ran it alone with no AI and it worked~~ Skipped by the user 2026-10-19 to save time; do it before the Week 12 presentation.
 
 **Goal 2: documentation (EXTREMELY IMPORTANT)**
-- [ ] Code explainer guide in `docs/guide/` (services, layers, files, DDD patterns, Kafka, streams, agents, with diagrams and examples)
-- [ ] Report outline: headings, what goes in each section, which repo artefact or code snippet to use (the user writes all prose)
+- [ ] Code explainer guide in `docs/guide/`: [x] 02 big picture · [ ] 03 inside a service · [ ] 04 DDD patterns · [ ] 05 Kafka and streams · [ ] 06 AI agents · [ ] 07 every FR
+- [x] Report outline (`docs/report-outline.md`): headings, what goes in each section, which repo artefact or code snippet to use (the user writes all prose)
 
 ## Open questions
 None right now. Run `/grill-me` before each slice to catch new ones.
