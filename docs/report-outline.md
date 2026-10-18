@@ -46,7 +46,7 @@ Read first: [02-requirements.md](02-requirements.md), guide 07 (coming).
 ### 2.3 Agentic AI requirements
 - [ ] Name the 2 agent stories (FR-04, FR-07) and why each needs an *agent* (the LLM chooses which tools to call), not a single prompt
 ### 2.4 Domain modeling
-Read first: guide 04 (coming), [03-bounded-contexts.md](03-bounded-contexts.md).
+Read first: [guide 04](guide/04-ddd-patterns.md), [03-bounded-contexts.md](03-bounded-contexts.md).
 - [ ] Domain model diagram: `docs/diagrams/png/domain-model.png`
 - [ ] Sub-domains = the 4 contexts; list the classes in each
 - [ ] **Justify**: why these classes fit the problem; why each context boundary is where it is (e.g. why goals live in Planner, why Tutor keeps its own topic copy). Use the glossary terms
@@ -62,7 +62,7 @@ Read first: [guide 03](guide/03-inside-a-service.md).
 - [ ] Purpose of each layer (presentation / service / domain / infrastructure)
 - [ ] Show that the packages match the layers. Paste a folder tree, e.g. `focus-service/src/main/java/com/studyanchor/focus/{presentation,service,domain,infrastructure}`
 ### 3.3 DDD patterns
-Read first: guide 04 (coming).
+Read first: [guide 04](guide/04-ddd-patterns.md).
 - [ ] Entity, value object, aggregate, domain event, domain service. For each: the definition from the lectures → one class → **why** it is that pattern → a snippet
 - Suggested snippets:
   - Aggregate root: `focus-service/…/domain/FocusSession.java` lines 79–101 (`start`) and the `end` method

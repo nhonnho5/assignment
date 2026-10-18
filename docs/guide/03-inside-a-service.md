@@ -401,4 +401,4 @@ With everything running ([01-run-it.md](01-run-it.md)), in Postman folder **5 FR
 
 ---
 
-**Next:** 04: DDD patterns (coming) names every pattern used across all four services and explains why each class fits it.
+**Next:** [04: DDD patterns](04-ddd-patterns.md) names every pattern used across all four services and explains why each class fits it.
