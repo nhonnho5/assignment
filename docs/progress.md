@@ -62,6 +62,18 @@ Decisions are in `02-requirements.md` FR-02 AC4–8; PDFBox approved in `09-conv
 - **planner-service:** `Topic` keeps material IDs (`materialCount` in `GET /courses/{id}`); `TutorMaterialsConsumer` on `tutor.materials` (group `planner-service`).
 - **Tests:** `MaterialTest` (6), `UploadedFileTextTest` (4), `MaterialServiceTest` (4), `TopicCatalogServiceTest` +1, `CourseTest` +1, `CourseServiceTest` +1.
 
+## Session 2026-10-19 (submission day): run guide, code guide, report outline
+Goals set by the user, in order. Claude ticks each item when it is done.
+
+**Goal 1: anyone can run it (IMPORTANT)**
+- [x] `docs/guide/01-run-it.md`: Windows step-by-step run guide, with expected output for each step
+- [x] Claude tested the guide from scratch (Kafka down → up, `mvn package` BUILD SUCCESS in 2:03, 4 services up, browser check, newman 97 requests / 141 assertions / 0 failed)
+- [ ] The user ran it alone with no AI and it worked
+
+**Goal 2: documentation (EXTREMELY IMPORTANT)**
+- [ ] Code explainer guide in `docs/guide/` (services, layers, files, DDD patterns, Kafka, streams, agents, with diagrams and examples)
+- [ ] Report outline: headings, what goes in each section, which repo artefact or code snippet to use (the user writes all prose)
+
 ## Open questions
 None right now. Run `/grill-me` before each slice to catch new ones.
 

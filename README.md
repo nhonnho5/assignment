@@ -11,6 +11,8 @@ StudyAnchor helps university students, especially students with ADHD, plan, focu
 
 Each service has its own in-memory H2 database (data is lost on restart) and its own copy of the event records; no code or database is shared. Kafka topics and event fields are in [docs/05-events.md](docs/05-events.md).
 
+**New here? Follow the step-by-step Windows guide: [docs/guide/01-run-it.md](docs/guide/01-run-it.md).**
+
 ## Prerequisites
 - JDK 21 and Maven 3.9+
 - Docker Desktop (for Kafka)
