@@ -65,6 +65,11 @@ Decisions are in `02-requirements.md` FR-02 AC4–8; PDFBox approved in `09-conv
 ## Open questions
 None right now. Run `/grill-me` before each slice to catch new ones.
 
+## After submission (Mon 2026-10-19, 5pm): demo page for the Week 12 presentation
+Decided 2026-10-17: the user approves an exception to "no frontend" for the presentation only. Build it after the report is submitted, so the submitted repo stays as is.
+- One static HTML page with plain JS (no framework, no new dependency) and a small CORS setting in each service.
+- Pick a demo user, one "seed demo data" button, then buttons for: start/end focus session, log a distraction, progress, "studying now" board, reminders, AI tutor chat, generate weekly plan.
+
 ## Reminders for the user
 - [x] ~~**At the start of step 10: run the live missed-block test (FR-12 AC4).**~~ Done 2026-10-14, passed (see Step 10). Closed step 9 without it (the user decided 2026-10-14; Planner was restarted mid-test). It is covered by unit tests (`FR12_blockIsMarkedMissedOnceAfterItEnds`, `FR12_missedBlockCreatesOneReminderQuotingAGoal`, `FR12_startedBlockGetsNoMissedReminder`). To test: add a 25-minute availability slot today that starts a few minutes from now, plan the current week, start no focus session, and about a minute after the block ends check `GET /plans/{weekStart}` (`"status":"MISSED"`) and `GET /reminders` (one `MISSED_BLOCK` reminder; still one a minute later).
 - [x] Working alone instead of a group of 3: approved by the professor (confirmed by the user 2026-10-14).
