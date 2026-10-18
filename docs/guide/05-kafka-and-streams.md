@@ -311,4 +311,4 @@ With everything running ([01-run-it.md](01-run-it.md)), using Postman:
 
 ---
 
-**Next:** 06: AI agents (coming) shows how the two LangChain4j agents call tools, and how the Java code keeps them within the rules.
+**Next:** [06: AI agents](06-ai-agents.md) shows how the two LangChain4j agents call tools, and how the Java code keeps them within the rules.

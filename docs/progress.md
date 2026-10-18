@@ -71,7 +71,7 @@ Goals set by the user, in order. Claude ticks each item when it is done.
 - [ ] ~~The user ran it alone with no AI and it worked~~ Skipped by the user 2026-10-19 to save time; do it before the Week 12 presentation.
 
 **Goal 2: documentation (EXTREMELY IMPORTANT)**
-- [ ] Code explainer guide in `docs/guide/`: [x] 02 big picture · [x] 03 inside a service · [x] 04 DDD patterns · [x] 05 Kafka and streams · [ ] 06 AI agents · [ ] 07 every FR
+- [ ] Code explainer guide in `docs/guide/`: [x] 02 big picture · [x] 03 inside a service · [x] 04 DDD patterns · [x] 05 Kafka and streams · [x] 06 AI agents · [ ] 07 every FR
 - [x] Report outline (`docs/report-outline.md`): headings, what goes in each section, which repo artefact or code snippet to use (the user writes all prose)
 
 ## Open questions

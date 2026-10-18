@@ -86,7 +86,7 @@ Read first: [guide 05](guide/05-kafka-and-streams.md), [06-stream-queries.md](06
   - FR-09: `social-service/…/infrastructure/PresenceTopology.java` lines 30–40 (KTable)
 - [ ] How results are queried in real time (interactive queries → `GET /progress/{userId}`, "studying now")
 ### 3.6 Agentic AI component
-Read first: guide 06 (coming).
+Read first: [guide 06](guide/06-ai-agents.md).
 - [ ] Patterns: tool use (function calling), the agent loop, guardrails in code (rules enforced by tools and the domain, not only by the prompt), a separate "solver" call (tutor)
 - [ ] Integration: LangChain4j `AiServices` + `GoogleAiGeminiChatModel`, key from `LLM_API_KEY`, model `gemini-3.5-flash-lite`, 503 when the LLM is down
 - [ ] Snippets: `tutor-service/…/infrastructure/TutoringTools.java` (`@Tool` methods from line 51), `tutor-service/…/domain/TutoringSession.java` `revealSolution` (line 100), `planner-service/…/infrastructure/PlanningTools.java` (`addBlocks`, line 133), `GeminiPlanningAgent.java` lines 49–64
