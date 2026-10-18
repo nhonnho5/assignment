@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{planner}}/goals"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Read one chapter a week",
+      "why": "Small steps add up and keep me calm before exams."
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      const set = (k, v) => pm.collectionVariables.set(k, v);
+      pm.test('status 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) {
+        set('goal2Id', j.id);
+      }
+    language: text/javascript
+order: 2000

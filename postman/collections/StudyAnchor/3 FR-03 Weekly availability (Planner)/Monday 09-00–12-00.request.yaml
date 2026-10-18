@@ -1,0 +1,20 @@
+$kind: http-request
+name: Monday 09:00–12:00
+url: "{{planner}}/availability/slots"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "day": "MONDAY",
+      "start": "09:00",
+      "end": "12:00"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('status 201', () => pm.response.to.have.status(201));
+    language: text/javascript
+order: 1000

@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{focus}}/sessions/{{session2Id}}/distractions"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "type": "OTHER_SITE",
+      "site": "https://www.youtube.com/watch?v=abc"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('status 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) {
+        pm.test('host youtube.com, off-policy (AC3, AC7)', () => pm.expect([j.site, j.offPolicy]).to.eql(['youtube.com', true]));
+      }
+    language: text/javascript
+order: 2000

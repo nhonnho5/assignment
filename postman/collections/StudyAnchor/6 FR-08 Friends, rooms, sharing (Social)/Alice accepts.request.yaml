@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{social}}/friends/requests/{{requestId}}/accept"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('status 200', () => pm.response.to.have.status(200));
+      if (pm.response.code === 200) {
+        pm.test('accepted', () => pm.expect(j.status).to.eql('ACCEPTED'));
+      }
+    language: text/javascript
+order: 6000

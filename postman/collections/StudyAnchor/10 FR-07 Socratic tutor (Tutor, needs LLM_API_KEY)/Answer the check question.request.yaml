@@ -1,0 +1,28 @@
+$kind: http-request
+url: "{{tutor}}/tutoring-sessions/{{tutoringId}}/messages"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "text": "The base case is the empty list, which returns 0. Without it the method calls itself forever and Java throws a StackOverflowError. Each call works on a shorter list, so it reaches the base case."
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      const set = (k, v) => pm.collectionVariables.set(k, v);
+      pm.test('status 200', () => pm.response.to.have.status(200));
+      if (pm.response.code === 200) {
+        pm.test('graded 1–5 and ended, or still CHECKING (AC5, AC10)', () => {
+          if (j.status === 'ENDED') pm.expect(j.understandingLevel).to.be.within(1, 5);
+          else pm.expect(j.status).to.eql('CHECKING');
+        });
+        console.log('Tutor:', j.reply, '| status:', j.status, '| level:', j.understandingLevel);
+        if (j.status === 'ENDED') set('tutorLevel', j.understandingLevel);
+      }
+    language: text/javascript
+order: 6000

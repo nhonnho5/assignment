@@ -164,10 +164,21 @@ That answer comes from a Kafka Streams state store in the Focus service, so if y
 
 ## Step 7. Demo with Postman
 
-### 7.1 Import the collection (once)
-1. Open Postman. (You can skip signing in: *"Continue with lightweight API client"*.)
-2. **Import** → choose `postman\StudyAnchor.postman_collection.json` from the project.
-3. **Settings (gear icon) → General → Working directory** → choose the project's `postman` folder. The material upload request needs this to find `sample-material.md`.
+### 7.1 Open the collection (once)
+The collection comes in two formats with the same 97 requests:
+
+| Format | Where | Use it for |
+|---|---|---|
+| **YAML** (Postman's local-files format) | `postman/collections/StudyAnchor/` (one file per request) + `.postman/resources.yaml` | **Newer Postman versions:** open the project folder as a local workspace |
+| JSON (one file) | `postman/StudyAnchor.postman_collection.json` | Older Postman (**Import** → choose the file), and `newman` (7.3) |
+
+**Newer Postman (YAML):**
+1. Open Postman and choose to open a **local folder / local workspace**. Pick the **project folder** (the one with `README.md`), not the `postman` folder inside it.
+2. The *StudyAnchor* collection appears with its 12 folders. Don't let Postman convert or move the JSON file: the YAML version is already there.
+
+**Older Postman (JSON):** **Import** → choose `postman\StudyAnchor.postman_collection.json`.
+
+**Either way:** **Settings (gear icon) → General → Working directory** → choose the project's `postman` folder. The material upload request needs this to find `sample-material.md`. (Or open that request's **Body** tab and pick the file by hand.)
 
 ### 7.2 Send requests
 1. Open folder **0 Setup** → **New run: users and dates** → **Send**. This makes two fresh students (`alice-xxxx`, `bob-xxxx`) and today's dates. Every other request uses them automatically.

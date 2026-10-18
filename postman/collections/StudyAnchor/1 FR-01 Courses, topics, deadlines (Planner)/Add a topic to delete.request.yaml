@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{planner}}/courses/{{courseId}}/topics"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Scratch topic"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('status 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) pm.collectionVariables.set('scratchTopicId', j.id);
+    language: text/javascript
+order: 13000

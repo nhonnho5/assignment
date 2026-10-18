@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{planner}}/courses/{{courseId}}"
+method: GET
+headers:
+  X-User-Id: "{{alice}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Wait for Kafka to deliver the event first.
+      setTimeout(() => {}, 2000);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('status 200', () => pm.response.to.have.status(200));
+      if (pm.response.code === 200) {
+        pm.test('materialCount 1 (AC8)', () => pm.expect(j.topics.find(t => t.name === 'Recursion').materialCount).to.eql(1));
+      }
+    language: text/javascript
+order: 6000

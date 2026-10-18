@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{social}}/rooms/{{roomId}}/join"
+method: POST
+headers:
+  X-User-Id: "{{bob}}"
+scripts:
+  - type: afterResponse
+    code: pm.test('status 409', () => pm.response.to.have.status(409));
+    language: text/javascript
+order: 13000

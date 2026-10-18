@@ -1,0 +1,4 @@
+$kind: collection
+name: 11 FR-04 + FR-12 Weekly plan and time blocks (Planner, needs LLM_API_KEY)
+description: FR-04, FR-12 AC3. The agent reads deadlines, availability, topics (ranked in code) and Focus progress through tools; every block rule is checked in StudyPlan. Tool calls and refusals are logged by planner-service.
+order: 12000

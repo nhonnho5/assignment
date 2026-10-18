@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{planner}}/plans/{{nextMonday}}"
+method: GET
+headers:
+  X-User-Id: "{{alice}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('status 200', () => pm.response.to.have.status(200));
+      if (pm.response.code === 200) {
+        pm.test('same plan', () => pm.expect(j.blocks[0].id).to.eql(pm.collectionVariables.get('blockId')));
+      }
+    language: text/javascript
+order: 6000

@@ -1,0 +1,3 @@
+$kind: collection
+description: FR-09. Social aggregates focus.sessions into a presence store and queries it.
+order: 8000

@@ -1,0 +1,3 @@
+$kind: collection
+description: FR-05. Start/end publish FocusSessionStarted/Ended to focus.sessions (Social logs them).
+order: 6000

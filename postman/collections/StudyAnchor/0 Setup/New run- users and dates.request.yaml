@@ -1,0 +1,39 @@
+$kind: http-request
+name: "New run: users and dates"
+url: "{{planner}}/courses"
+method: GET
+headers:
+  X-User-Id: "{{alice}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      const set = (k, v) => pm.collectionVariables.set(k, v);
+      const run = Math.random().toString(36).slice(2, 6);
+      set('alice', 'alice-' + run);
+      set('bob', 'bob-' + run);
+      const today = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' }) + 'T00:00:00Z');
+      const day = n => new Date(today.getTime() + n * 864e5).toISOString().slice(0, 10);
+      const toMonday = (8 - today.getUTCDay()) % 7 || 7;
+      set('nextMonday', day(toMonday));
+      set('nextTuesday', day(toMonday + 1));
+      set('endedMonday', day(toMonday - 14));
+      set('dueAt', day(14) + 'T23:59');
+      set('pastDueAt', day(-1) + 'T09:00');
+      set('targetDate', day(60));
+      set('yesterday', day(-1));
+      set('longText', 'x'.repeat(281));
+      ['courseId', 'topicId', 'topic2Id', 'deadlineId', 'materialId', 'slotId', 'goalId', 'goal2Id', 'sessionId',
+       'session2Id', 'session3Id', 'requestId', 'roomId', 'reminderId', 'tutoringId', 'tutorLevel', 'blockId',
+       'blockTopicId', 'scratchTopicId'].forEach(k => pm.collectionVariables.unset(k));
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('status 200', () => pm.response.to.have.status(200));
+      if (pm.response.code === 200) {
+        pm.test('the new user has no courses', () => pm.expect(j).to.eql([]));
+        console.log('Run users:', pm.collectionVariables.get('alice'), pm.collectionVariables.get('bob'),
+          '| next Monday:', pm.collectionVariables.get('nextMonday'));
+      }
+    language: text/javascript
+order: 1000

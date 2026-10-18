@@ -1,0 +1,3 @@
+$kind: collection
+description: FR-01. Creating a topic publishes TopicCreated to planner.topics; Tutor keeps a copy.
+order: 2000

@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{planner}}/availability/slots/{{slotId}}"
+method: DELETE
+headers:
+  X-User-Id: "{{alice}}"
+scripts:
+  - type: afterResponse
+    code: pm.test('status 204', () => pm.response.to.have.status(204));
+    language: text/javascript
+order: 7000

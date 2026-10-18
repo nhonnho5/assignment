@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{planner}}/plans"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "weekStart": "{{nextMonday}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('status 409', () => pm.response.to.have.status(409));
+      if (pm.response.code === 409) {
+        pm.test('tells the student to send replace: true (AC8)', () => pm.expect(j.message).to.include('replace'));
+      }
+    language: text/javascript
+order: 5000

@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{planner}}/courses"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "code": "CSCI318",
+      "name": "Duplicate"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('status 409', () => pm.response.to.have.status(409));
+    language: text/javascript
+order: 2000

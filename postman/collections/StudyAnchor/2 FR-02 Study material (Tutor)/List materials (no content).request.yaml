@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{tutor}}/topics/{{topicId}}/materials"
+method: GET
+headers:
+  X-User-Id: "{{alice}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('status 200', () => pm.response.to.have.status(200));
+      if (pm.response.code === 200) {
+        pm.test('one material, no content in the list (AC6)', () => {
+          pm.expect(j).to.have.length(1);
+          pm.expect(j[0]).to.not.have.property('content');
+        });
+      }
+    language: text/javascript
+order: 3000

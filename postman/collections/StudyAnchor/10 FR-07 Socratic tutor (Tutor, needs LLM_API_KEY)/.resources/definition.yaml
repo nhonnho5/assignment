@@ -1,0 +1,3 @@
+$kind: collection
+description: FR-07. The tutor's words change every run, so these checks look at status and state, not text. Read each "reply" in the response body. Tool calls (and refusals) are logged by tutor-service.
+order: 11000

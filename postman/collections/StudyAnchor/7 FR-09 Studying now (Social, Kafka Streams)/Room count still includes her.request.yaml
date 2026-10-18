@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{social}}/rooms/{{roomId}}/studying-now"
+method: GET
+headers:
+  X-User-Id: "{{bob}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('status 200', () => pm.response.to.have.status(200));
+      if (pm.response.code === 200) {
+        pm.test('anonymous count (AC6)', () => pm.expect(j.studyingCount).to.eql(1));
+      }
+    language: text/javascript
+order: 6000

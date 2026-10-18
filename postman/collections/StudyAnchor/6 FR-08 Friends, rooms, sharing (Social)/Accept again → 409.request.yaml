@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{social}}/friends/requests/{{requestId}}/accept"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+scripts:
+  - type: afterResponse
+    code: pm.test('status 409', () => pm.response.to.have.status(409));
+    language: text/javascript
+order: 7000

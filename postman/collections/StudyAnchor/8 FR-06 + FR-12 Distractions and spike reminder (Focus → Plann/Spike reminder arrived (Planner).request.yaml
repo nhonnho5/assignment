@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{planner}}/reminders"
+method: GET
+headers:
+  X-User-Id: "{{alice}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Wait for Kafka to deliver the event first.
+      setTimeout(() => {}, 4000);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      const set = (k, v) => pm.collectionVariables.set(k, v);
+      pm.test('status 200', () => pm.response.to.have.status(200));
+      if (pm.response.code === 200) {
+        pm.test('one DISTRACTION_SPIKE reminder (FR-12 AC1, AC2)', () => {
+          pm.expect(j.map(x => x.kind)).to.eql(['DISTRACTION_SPIKE']);
+        });
+        console.log('Reminder:', j[0] && j[0].message);
+        set('reminderId', j[0] && j[0].id);
+      }
+    language: text/javascript
+order: 6000

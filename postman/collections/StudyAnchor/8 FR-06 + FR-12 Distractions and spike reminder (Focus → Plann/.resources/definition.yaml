@@ -1,0 +1,4 @@
+$kind: collection
+name: 8 FR-06 + FR-12 Distractions and spike reminder (Focus → Planner)
+description: FR-06, FR-12 AC1/AC2/AC6. 3 distractions in one 30-minute window → DistractionSpikeDetected on focus.alerts → Planner reminder quoting a goal or value.
+order: 9000

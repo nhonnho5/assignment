@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{tutor}}/tutoring-sessions/{{tutoringId}}/messages"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "text": "My idea: loop over the list with a for loop and add each number to a total."
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('status 200', () => pm.response.to.have.status(200));
+      if (pm.response.code === 200) {
+        console.log('Tutor:', j.reply, '| attempts:', j.attempts);
+      }
+    language: text/javascript
+order: 2000

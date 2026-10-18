@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{focus}}/sessions/{{session2Id}}/distractions"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "type": "THOUGHT"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('status 409', () => pm.response.to.have.status(409));
+    language: text/javascript
+order: 10000

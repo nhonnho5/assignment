@@ -1,0 +1,35 @@
+$kind: http-request
+url: "{{planner}}/plans"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "weekStart": "{{nextMonday}}"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      const set = (k, v) => pm.collectionVariables.set(k, v);
+      pm.test('status 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) {
+        pm.test('blocks follow the rules (AC3, AC5, AC10)', () => {
+          pm.expect(j.blocks).to.not.be.empty;
+          j.blocks.forEach(b => {
+            pm.expect(b.minutes).to.be.within(25, 90);
+            pm.expect(['MONDAY', 'WEDNESDAY', 'FRIDAY']).to.include(b.day);
+            pm.expect(b.rationale).to.not.be.empty;
+            pm.expect(b.status).to.eql('PLANNED');
+          });
+        });
+        j.blocks.forEach(b => console.log(b.day, b.start + '-' + b.end, b.topicName, '|', b.rationale));
+        console.log('Summary:', j.summary, '| shortfall:', j.shortfall);
+        set('blockId', j.blocks[0].id);
+        set('blockTopicId', j.blocks[0].topicId);
+      }
+    language: text/javascript
+order: 4000

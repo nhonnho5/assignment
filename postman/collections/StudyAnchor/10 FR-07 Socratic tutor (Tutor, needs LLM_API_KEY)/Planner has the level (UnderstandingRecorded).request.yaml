@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{planner}}/courses/{{courseId}}"
+method: GET
+headers:
+  X-User-Id: "{{alice}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Wait for Kafka to deliver the event first.
+      setTimeout(() => {}, 2000);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('status 200', () => pm.response.to.have.status(200));
+      if (pm.response.code === 200) {
+        const level = pm.collectionVariables.get('tutorLevel');
+        const topic = j.topics.find(t => t.name === 'Recursion');
+        if (level) pm.test('understandingLevel from Tutor (AC14)', () => pm.expect(topic.understandingLevel).to.eql(Number(level)));
+        else console.log('Session still CHECKING: answer the check question again, then rerun this request.');
+      }
+    language: text/javascript
+order: 8000

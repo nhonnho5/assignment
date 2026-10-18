@@ -1,0 +1,24 @@
+$kind: http-request
+name: Add topic "Domain-Driven Design"
+url: "{{planner}}/courses/{{courseId}}/topics"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Domain-Driven Design"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      const set = (k, v) => pm.collectionVariables.set(k, v);
+      pm.test('status 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) {
+        set('topic2Id', j.id);
+      }
+    language: text/javascript
+order: 4000

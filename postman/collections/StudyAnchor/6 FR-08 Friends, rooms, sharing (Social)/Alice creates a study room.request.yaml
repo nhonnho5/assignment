@@ -1,0 +1,24 @@
+$kind: http-request
+url: "{{social}}/rooms"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "CSCI318 study group"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      const set = (k, v) => pm.collectionVariables.set(k, v);
+      pm.test('status 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) {
+        pm.test('creator is the first member', () => pm.expect(j.members).to.eql([pm.collectionVariables.get('alice')]));
+        set('roomId', j.id);
+      }
+    language: text/javascript
+order: 11000

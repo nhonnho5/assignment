@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{focus}}/sessions"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "plannedMinutes": 5,
+      "allowedSites": []
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('status 400', () => pm.response.to.have.status(400));
+    language: text/javascript
+order: 1000

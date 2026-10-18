@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{social}}/friends/requests"
+method: POST
+headers:
+  X-User-Id: "{{bob}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "toUserId": "{{bob}}"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('status 400', () => pm.response.to.have.status(400));
+    language: text/javascript
+order: 1000

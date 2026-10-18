@@ -1,0 +1,3 @@
+$kind: collection
+description: FR-08. Any non-blank user ID is a user.
+order: 7000

@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{planner}}/plans"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "weekStart": "{{nextTuesday}}"
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('status 400', () => pm.response.to.have.status(400));
+    language: text/javascript
+order: 1000

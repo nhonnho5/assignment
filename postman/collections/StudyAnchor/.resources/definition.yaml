@@ -1,0 +1,26 @@
+$kind: collection
+description: |-
+  Demo data and checks for every functional requirement (FR-01..FR-12).
+
+  Run the whole collection top to bottom with the Collection Runner (or Newman). Folder 0 creates new user IDs
+  (alice-xxxx, bob-xxxx) each run, so the collection can be run again without restarting the services.
+
+  Needs: Kafka (docker compose up -d) and all four services running. Folders 10 and 11 call Gemini and need
+  LLM_API_KEY in .env; a 503 there means the LLM is unavailable or over quota: wait a minute and run the folder again.
+  Folder 2 uploads postman/sample-material.md: set Postman's working directory to the postman folder
+  (Settings > General), or pick the file in the request's Body tab.
+variables:
+  planner: http://localhost:8081
+  tutor: http://localhost:8082
+  focus: http://localhost:8083
+  social: http://localhost:8084
+  alice: ""
+  bob: ""
+  nextMonday: ""
+  nextTuesday: ""
+  endedMonday: ""
+  dueAt: ""
+  pastDueAt: ""
+  targetDate: ""
+  yesterday: ""
+  longText: ""

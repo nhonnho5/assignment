@@ -66,7 +66,7 @@ Each prints `Started ...Application` when ready. To stop everything: Ctrl+C in e
 ## Demo with Postman
 `postman/StudyAnchor.postman_collection.json` seeds demo data and checks every FR. Folders run in order (0 Setup, then FR-01 → FR-04), and every request has tests.
 
-- **Postman:** Import the collection. Set Settings → General → Working directory to the `postman` folder, so the material upload finds `sample-material.md`. Then run the whole collection with the Collection Runner.
+- **Postman:** newer versions: open the project folder as a local workspace; the YAML collection in `postman/collections/StudyAnchor/` loads automatically. Older versions: Import `postman/StudyAnchor.postman_collection.json` (same requests). Set Settings → General → Working directory to the `postman` folder, so the material upload finds `sample-material.md`. Then run the whole collection with the Collection Runner.
 - **Command line:**
 
 ```bash

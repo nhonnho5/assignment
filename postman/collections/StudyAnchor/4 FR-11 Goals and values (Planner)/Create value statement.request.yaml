@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{planner}}/values"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "text": "Learning is how I take care of my future self."
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('status 201', () => pm.response.to.have.status(201));
+    language: text/javascript
+order: 4000

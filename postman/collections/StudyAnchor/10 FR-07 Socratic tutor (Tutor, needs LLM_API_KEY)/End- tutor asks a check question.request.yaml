@@ -1,0 +1,17 @@
+$kind: http-request
+name: "End: tutor asks a check question"
+url: "{{tutor}}/tutoring-sessions/{{tutoringId}}/end"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('status 200', () => pm.response.to.have.status(200));
+      if (pm.response.code === 200) {
+        pm.test('CHECKING (AC10)', () => pm.expect(j.status).to.eql('CHECKING'));
+        console.log('Check question:', j.reply);
+      }
+    language: text/javascript
+order: 5000

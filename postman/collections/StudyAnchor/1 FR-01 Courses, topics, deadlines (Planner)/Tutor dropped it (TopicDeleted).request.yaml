@@ -1,0 +1,20 @@
+$kind: http-request
+url: "{{tutor}}/topics"
+method: GET
+headers:
+  X-User-Id: "{{alice}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Wait for Kafka to deliver the event first.
+      setTimeout(() => {}, 2000);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('status 200', () => pm.response.to.have.status(200));
+      if (pm.response.code === 200) {
+        pm.test('only the two real topics are left (AC9, AC10)', () => pm.expect(j.map(t => t.topicName)).to.have.members(['Recursion', 'Domain-Driven Design']));
+      }
+    language: text/javascript
+order: 15000

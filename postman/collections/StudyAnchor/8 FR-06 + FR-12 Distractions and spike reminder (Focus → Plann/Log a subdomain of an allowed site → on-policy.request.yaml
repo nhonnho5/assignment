@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{focus}}/sessions/{{session2Id}}/distractions"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "type": "other_site",
+      "site": "docs.oracle.com/en/java"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const j = pm.response.json();
+      pm.test('status 201', () => pm.response.to.have.status(201));
+      if (pm.response.code === 201) {
+        pm.test('docs.oracle.com allowed by oracle.com (AC7)', () => pm.expect(j.offPolicy).to.eql(false));
+      }
+    language: text/javascript
+order: 4000

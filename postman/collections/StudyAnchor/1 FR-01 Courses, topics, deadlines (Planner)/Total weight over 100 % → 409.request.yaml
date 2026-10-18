@@ -1,0 +1,22 @@
+$kind: http-request
+url: "{{planner}}/courses/{{courseId}}/deadlines"
+method: POST
+headers:
+  X-User-Id: "{{alice}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "title": "Final exam",
+      "dueAt": "{{dueAt}}",
+      "weight": 70,
+      "topicIds": [
+        "{{topicId}}"
+      ]
+    }
+scripts:
+  - type: afterResponse
+    code: pm.test('status 409', () => pm.response.to.have.status(409));
+    language: text/javascript
+order: 8000
