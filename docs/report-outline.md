@@ -57,7 +57,7 @@ Read first: [guide 02 §2.3–2.5](guide/02-big-picture.md).
 - [ ] Architecture diagram: `docs/diagrams/png/architecture.png`
 - [ ] Explain: 4 services, ports, Kafka vs the single REST call, and why mostly events
 ### 3.2 Layered architecture
-Read first: guide 03 (coming).
+Read first: [guide 03](guide/03-inside-a-service.md).
 - [ ] Layers diagram: `docs/diagrams/png/layers.png`
 - [ ] Purpose of each layer (presentation / service / domain / infrastructure)
 - [ ] Show that the packages match the layers. Paste a folder tree, e.g. `focus-service/src/main/java/com/studyanchor/focus/{presentation,service,domain,infrastructure}`
