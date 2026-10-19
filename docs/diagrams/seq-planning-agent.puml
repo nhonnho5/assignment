@@ -1,0 +1,31 @@
+@startuml seq-planning-agent
+' Origin: drafted with AI assistance (Claude Code) from PlanningTools, GeminiPlanningAgent and the real tool log of 2026-10-19; reviewed by the author.
+title Planning agent: tool-use loop with guardrails in code (FR-04)
+actor Student
+participant "StudyPlanController\n/ StudyPlanService" as Svc
+participant "GeminiPlanningAgent\n(LangChain4j AiServices)" as Agent
+participant "Gemini LLM" as LLM
+participant "PlanningTools" as Tools
+participant "StudyPlan\n(aggregate)" as Plan
+participant "focus-service\nGET /progress" as Focus
+
+Student -> Svc : POST /plans {weekStart, replace}
+Svc -> Svc : checks before any LLM call:\nMonday? week not over? slots + topics? (400)\nplan exists and replace≠true? (409)
+Svc -> Agent : plan(StudyPlan, courses, availability)
+Agent -> LLM : system instructions + "plan my week"
+loop the LLM decides which tool to call next
+  LLM -> Tools : getDeadlines / getAvailability / getTopics (ranked by TopicPriority)
+  LLM -> Tools : getFocusStats
+  Tools -> Focus : RestClient GET /progress/{userId}
+  LLM -> Tools : addBlocks([...])
+  Tools -> Plan : addBlock() per block
+  Plan --> Tools : ok, or DomainException\n(outside slot, <25 / >90 min, <10 min gap, past)
+  Tools --> LLM : "Added n block(s)" + "REFUSED block k: reason"
+  LLM -> Tools : reportInsufficientTime(reason)
+  Tools -> Plan : refused while the plan is empty\nand a later slot is still free
+end
+LLM --> Agent : final reply = plan summary
+Agent --> Svc : summary
+Svc --> Student : 201 plan with blocks, rationale, shortfall
+note over Svc, LLM : LLM error (quota, network, no key) → 503, nothing saved
+@enduml

@@ -1,0 +1,40 @@
+@startuml seq-socratic-tutor
+' Origin: drafted with AI assistance (Claude Code) from TutoringTools, TutoringSession and the real tool log of 2026-10-19; reviewed by the author.
+title Socratic tutor: hints first, solution only after 2 attempts (FR-07)
+actor Student
+participant "TutoringService" as Svc
+participant "GeminiTutorAgent" as Agent
+participant "Gemini LLM\n(tutor)" as LLM
+participant "TutoringTools" as Tools
+participant "TutoringSession\n(aggregate)" as Session
+participant "Gemini LLM\n(solver call)" as Solver
+queue "tutor.understanding" as Topic
+
+Student -> Svc : POST /tutoring-sessions {topicId, question}
+Svc -> Agent : reply(session) + 3 closest material paragraphs
+Agent -> LLM : instructions + transcript
+LLM --> Student : guiding question / hint (never the answer)
+
+Student -> Svc : "Just give me the answer please."
+LLM -> Tools : revealSolution()
+Tools -> Session : revealSolution()
+Session --> Tools : DomainException: 0 attempts, 2 needed
+Tools --> LLM : "REFUSED: ..." → gives another hint
+
+Student -> Svc : two real attempts
+LLM -> Tools : recordAttempt() (max one per student message)
+Student -> Svc : "Can I see the full solution?"
+LLM -> Tools : revealSolution()
+Tools -> Session : allowed (attempts = 2)
+Tools -> Solver : separate solver prompt
+Solver --> Tools : worked solution
+Tools --> LLM : solution to share
+
+Student -> Svc : POST /tutoring-sessions/{id}/end
+Session -> Session : ACTIVE → CHECKING
+LLM --> Student : check-understanding question
+Student -> Svc : answer
+LLM -> Tools : recordUnderstanding(5)
+Tools -> Session : CHECKING → ENDED, registers UnderstandingRecorded
+Svc -> Topic : publish UnderstandingRecorded → Planner updates topic level
+@enduml

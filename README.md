@@ -28,6 +28,15 @@ LLM_API_KEY=your-gemini-key
 
 Optional: `LLM_MODEL=...` picks another Gemini model (default `gemini-3.5-flash-lite`).
 
+## Configuration
+Nothing else needs to be set; the defaults below work as they are.
+
+| Part | Where | Setting |
+|---|---|---|
+| Apache Kafka | `docker-compose.yml` | One Kafka 4.1 broker (KRaft, no ZooKeeper) on `localhost:9092`. A one-shot `kafka-init` container creates the 6 topics (`planner.topics`, `tutor.materials`, `tutor.understanding`, `focus.sessions`, `focus.distractions`, `focus.alerts`), 3 partitions each. |
+| Spring Boot services | `<service>/src/main/resources/application.yml` | Ports 8081–8084; Kafka broker `localhost:9092` (Spring Cloud Stream bindings and Kafka Streams); each service has its own in-memory H2 database. |
+| LLM | `.env` (read by Planner and Tutor) | `LLM_API_KEY` (required for FR-04 and FR-07), `LLM_MODEL` (optional). Google Gemini through LangChain4j. Without a key the services still start; only the two AI endpoints return 503. |
+
 ## Run
 All commands run from the project root.
 
@@ -76,7 +85,7 @@ npx newman run postman/StudyAnchor.postman_collection.json --working-dir postman
 Expected result: 97 requests, 0 failed. Each run makes new users (`alice-xxxx`, `bob-xxxx`), so you can run it again without restarting anything. A few requests wait 2–3 s for Kafka to deliver an event. Folders 10 and 11 call Gemini: a 503 there means the LLM is unavailable or over quota. Wait a minute and run that folder again.
 
 ## Sample inputs (curl)
-Every request needs the header `X-User-Id` (any non-blank name; there is no login). Times are Australia/Sydney local time. Replace `<...>` with IDs from earlier responses. Shown for bash (Git Bash on Windows).
+Every request needs the header `X-User-Id` (any non-blank name; there is no login). Times are Australia/Sydney local time. Replace `<...>` with IDs from earlier responses. Shown for bash (Git Bash on Windows). The samples cover all 12 user stories, in an order that works end to end (later ones use data from earlier ones). Sample outputs are in [docs/guide/07-every-feature.md](docs/guide/07-every-feature.md).
 
 **FR-01 Courses, topics, deadlines**: Planner tells Tutor about each topic (`TopicCreated`).
 
@@ -241,5 +250,8 @@ mvn test
 - [docs/02-requirements.md](docs/02-requirements.md): FR-01 to FR-12 with acceptance criteria
 - [docs/03-bounded-contexts.md](docs/03-bounded-contexts.md): which service owns what
 - [docs/05-events.md](docs/05-events.md): Kafka topics and event contracts
+- [docs/06-stream-queries.md](docs/06-stream-queries.md): the three stream-processing queries (SQL-like)
 - [docs/09-conventions.md](docs/09-conventions.md): stack, packages, DDD rules
+- [docs/diagrams/](docs/diagrams/): use case, activity, domain model, architecture, layers, database and sequence diagrams
+- [docs/guide/](docs/guide/README.md): step-by-step run guide and code guide
 - [docs/ai-log/](docs/ai-log/): how AI was used

@@ -13,6 +13,10 @@ The PlantUML sources (`.puml`) are the originals. The `png/` folder holds export
 | Layered architecture per service, mapped to packages | [layers.puml](layers.puml) | §3.2 |
 | Database design (tables per service, state stores) | [database.puml](database.puml) | §3.4 |
 | Stream processing queries (SQL-like) | [../06-stream-queries.md](../06-stream-queries.md) | §3.5 |
+| Context map (upstream / downstream between contexts) | [context-map.puml](context-map.puml) | §2.4 |
+| Sequence: one focus session feeds three consumers | [seq-focus-event-flow.puml](seq-focus-event-flow.puml) | §3.5 |
+| Sequence: planning agent tool loop and guardrails | [seq-planning-agent.puml](seq-planning-agent.puml) | §3.6 |
+| Sequence: Socratic tutor refusal, attempts, solver, grading | [seq-socratic-tutor.puml](seq-socratic-tutor.puml) | §3.6 |
 
 ## Re-render after editing
 From the project root (needs Node.js 18+). The script sends each diagram's text to the public PlantUML server, so only use it for content you are happy to send there:

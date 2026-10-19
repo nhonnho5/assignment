@@ -1,0 +1,24 @@
+@startuml context-map
+' Origin: drafted with AI assistance (Claude Code) from docs/03-bounded-contexts.md; reviewed by the author.
+title StudyAnchor — context map (DDD strategic design)
+skinparam rectangle {
+  RoundCorner 15
+}
+left to right direction
+
+rectangle "Planner context\n(core: what / when / why)\nCourse, Topic, Deadline, Availability,\nStudyPlan, TimeBlock, Goal,\nValueStatement, Reminder" as P
+rectangle "Tutor context\n(core: active learning)\nMaterial, TutoringSession,\nMessage, TopicReference (read model)" as T
+rectangle "Focus context\n(core: sustained focus)\nFocusSession, Distraction,\nFocusProgress" as F
+rectangle "Social context\n(supporting: accountability)\nFriendship, StudyRoom,\nSharingSetting, Presence" as S
+
+P --> T : "U → D (Tutor = conformist)\nTopicCreated, TopicDeleted"
+T --> P : "U → D\nMaterialAdded,\nUnderstandingRecorded"
+F --> P : "U → D\nFocusSessionStarted/Ended,\nDistractionSpikeDetected"
+F --> S : "U → D\nFocusSessionStarted/Ended\n(presence KTable)"
+P ..> F : "REST (customer–supplier)\nGET /progress/{userId}"
+
+note bottom of F
+  Published language: JSON events in docs/05-events.md.
+  Each service has its own Java records (no shared library).
+end note
+@enduml

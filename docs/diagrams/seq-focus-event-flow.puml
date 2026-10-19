@@ -1,0 +1,33 @@
+@startuml seq-focus-event-flow
+' Origin: drafted with AI assistance (Claude Code) from docs/05-events.md and docs/06-stream-queries.md; reviewed by the author.
+title One focus session, end to end (FR-05 → FR-09, FR-10, FR-12)
+autonumber
+actor Student
+participant "focus-service\nREST + domain" as Focus
+database "H2 focus" as FDb
+queue "focus.sessions" as Sessions
+participant "Social: presence\n(KTable)" as Presence
+participant "Focus: progress\n(1-day windows)" as Progress
+participant "Planner:\nFocusSessionsConsumer" as Planner
+
+Student -> Focus : POST /sessions {plannedMinutes, timeBlockId}
+Focus -> Focus : FocusSession.start() checks rules,\nregisters FocusSessionStarted
+Focus -> FDb : save
+Focus -> Sessions : publish FocusSessionStarted (key = userId)
+Sessions -> Presence : upsert userId → "studying now"
+Sessions -> Planner : TimeBlock PLANNED → STARTED
+Focus --> Student : 201 Created
+
+Student -> Focus : POST /sessions/{id}/end
+Focus -> Focus : FocusSession.end() computes actualSeconds,\nregisters FocusSessionEnded
+Focus -> FDb : save
+Focus -> Sessions : publish FocusSessionEnded
+Sessions -> Presence : tombstone (null) → removed from board
+Sessions -> Progress : SUM(actualSeconds) in the Sydney day of startedAt
+Sessions -> Planner : TimeBlock → COMPLETED
+Focus --> Student : 200 OK (actual 25m 59s)
+
+Student -> Focus : GET /progress/{userId}
+Focus -> Progress : interactive query (focus-progress-store)
+Focus --> Student : today, last 7 days, streak
+@enduml
